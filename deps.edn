@@ -1,0 +1,12 @@
+{:paths ["data" "src" "env/dev/src"]
+ :deps {org.clojure/clojure {:mvn/version "1.11.1"}
+        scicloj/tablecloth {:mvn/version "7.021"}
+        org.scicloj/clay {:mvn/version "2-alpha87"}
+        org.scicloj/noj {:mvn/version "1-alpha31"}
+        com.cnuernber/charred {:mvn/version "1.033"}
+        generateme/fastmath {:mvn/version "2.4.0"}
+        scicloj/metamorph.ml {:mvn/version "0.7.8"}
+        org.scicloj/scicloj.ml.tribuo {:mvn/version "0.1.0"}
+        scicloj/scicloj.ml.tribuo {:git/url "https://github.com/scicloj/scicloj.ml.tribuo"
+                                   :git/sha "1bde7c4030c9b355d3c4f8a0707dadbf11849310"}
+        org.tribuo/tribuo-all {:mvn/version "4.3.1" :extension "pom"}}}
