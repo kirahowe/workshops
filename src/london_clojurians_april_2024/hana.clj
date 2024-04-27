@@ -9,7 +9,7 @@
             [scicloj.metamorph.ml.toydata :as toydata]))
 
 
-(defn invoke [[f arg]]
+(defn build [[f arg]]
   (f arg))
 
 (defn prepare-data [dataset]
@@ -26,24 +26,31 @@
     (update m k f)
     m))
 
-(defn layered-xform [{:keys [template args]}]
+(defn xform [{:keys [template args]}]
   (-> template
-      (safe-update :layer
-                   (partial
-                    mapv
-                    (fn [layer]
-                      (-> layer
-                          (update :template
-                                  (partial merge (dissoc template
-                                                         :layer
-                                                         :metamorph/data)))
-                          (update :args
-                                  (partial merge args))
-                          layered-xform))))
       (update :metamorph/data prepare-data)
       (hc/xform args)
       (update-keys #(case % :metamorph/data :data %))
       kind/vega-lite))
+
+(defn layered-xform [{:as context
+                      :keys [template args]}]
+  (-> context
+      (update :template
+              safe-update
+              :layer
+              (partial
+               mapv
+               (fn [layer]
+                 (-> layer
+                     (update :template
+                             (partial merge (dissoc template
+                                                    :layer
+                                                    :metamorph/data)))
+                     (update :args
+                             (partial merge args))
+                     xform))))
+      xform))
 
 (defn svg-rendered [vega-lite-template]
   (assoc vega-lite-template
