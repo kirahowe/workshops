@@ -26,12 +26,14 @@
     (update m k f)
     m))
 
-(defn xform [{:keys [template args]}]
-  (-> template
-      (update :metamorph/data prepare-data)
-      (hc/xform args)
-      (update-keys #(case % :metamorph/data :data %))
-      kind/vega-lite))
+(defn xform [{:as context
+              :keys [template args]}]
+  (let [dataset (:metamorph/data context)]
+    (-> template
+        (hc/xform args)
+        (cond-> dataset
+          (assoc :data (prepare-data dataset)))
+        kind/vega-lite)))
 
 (defn layered-xform [{:as context
                       :keys [template args]}]
@@ -64,36 +66,20 @@
 
 
 (defn plot
-  ([dataset template args]
-   (plot (assoc template
-                :metamorph/data dataset)
+  ([dataset args]
+   (plot dataset
+         view-base
          args))
-  ([template-or-dataset args]
-   (if (tc/dataset? template-or-dataset)
-     (plot template-or-dataset
-           view-base
-           args)
-     ;; else
-     (let [template template-or-dataset
-           dataset (:metamorph/data template)]
-       (if (tc/grouped? dataset)
-         (-> dataset
-             (tc/aggregate {:plot (fn [group-dataset]
-                                    [(plot (assoc template
-                                                  :metamorph/data group-dataset)
-                                           args)])})
-             (tc/rename-columns {:plot-0 :plot})
-             kind/table)
-         ;; else
-         (kind/fn [layered-xform
-                   {:template template
-                    :args args}]))))))
-
+  ([dataset template args]
+   (kind/fn [layered-xform
+             {:metamorph/data dataset
+              :template template
+              :args args}])))
 
 (defn layer
   ([context template args]
    (if (tc/dataset? context)
-     (layer (plot context {} {})
+     (layer (plot context {})
             template
             args)
      (-> context
