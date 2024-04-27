@@ -43,11 +43,10 @@
                mapv
                (fn [layer]
                  (-> layer
-                     (update :template
-                             (partial merge (dissoc template
-                                                    :layer
-                                                    :metamorph/data)))
                      (update :args
+                             ;; merge the toplevel args
+                             ;; with the layer's
+                             ;; specific args
                              (partial merge args))
                      xform))))
       xform))
