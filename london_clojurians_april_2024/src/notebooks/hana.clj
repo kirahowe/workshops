@@ -3,10 +3,12 @@
             [scicloj.noj.v1.paths :as paths]
             [scicloj.tempfiles.api :as tempfiles]
             [tablecloth.api :as tc]
+            [tablecloth.column.api :as tcc]
             [tech.v3.dataset :as ds]
             [aerial.hanami.common :as hc]
             [aerial.hanami.templates :as ht]
-            [scicloj.metamorph.ml.toydata :as toydata]))
+            [scicloj.metamorph.ml.toydata :as toydata]
+            [tech.v3.datatype.functional :as fun]))
 
 
 (defn build [[f arg]]
@@ -26,17 +28,21 @@
     (update m k f)
     m))
 
-(defn xform [{:as context
-              :keys [template args stat]}]
-  (let [dataset (:metamorph/data context)]
+
+(defn xform [context]
+  (let [{:keys [hana/stat]} (:args context)
+        context1 (if stat
+                   (stat context)
+                   context)
+        {:keys [template args metamorph/data]} context1]
     (-> template
         (hc/xform args)
-        (cond-> dataset
-          (assoc :data (prepare-data dataset)))
+        (cond-> data
+          (assoc :data (prepare-data data)))
         kind/vega-lite)))
 
 (defn layered-xform [{:as context
-                      :keys [template args]}]
+                      :keys [template args metamorph/data]}]
   (-> context
       (update :template
               safe-update
@@ -45,11 +51,11 @@
                mapv
                (fn [layer]
                  (-> layer
-                     (update :args
-                             ;; merge the toplevel args
-                             ;; with the layer's
-                             ;; specific args
-                             (partial merge args))
+                     ;; merge the toplevel args
+                     ;; with the layer's
+                     ;; specific args
+                     (update :args (partial merge args))
+                     (update :metamorph/data #(or % data))
                      xform))))
       xform))
 
@@ -102,11 +108,38 @@
   (fn [context args]
     (layer context line-layer args)))
 
+(def linreg-stat
+  (fn [{:as context
+        :keys [template args metamorph/data]}]
+    (let [[X Y] (hc/xform [:X :Y] args)
+          xs (data X)
+          ys (data Y)
+          model (fun/linear-regressor xs ys)]
+      (assoc context
+             :metamorph/data (-> {X [(tcc/reduce-min xs)
+                                     (tcc/reduce-max xs)]}
+                                 tc/dataset
+                                 (tc/map-columns Y [X] model))))))
+
+(def layer-linreg
+  (fn [context args]
+    (layer context
+           line-layer
+           (merge {:hana/stat linreg-stat}
+                  args))))
+
 (delay
   (-> (toydata/iris-ds)
       (plot point-chart
             {:X :sepal_width
              :Y :sepal_length})))
+
+(delay
+  (-> (toydata/iris-ds)
+      (plot {:X :sepal_width
+             :Y :sepal_length})
+      (layer-point {})
+      (layer-linreg {})))
 
 (delay
   (-> (toydata/iris-ds)
