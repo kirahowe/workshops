@@ -12,7 +12,8 @@
    [tablecloth.api :as tc]
    [tech.v3.dataset.rolling :as ds-rolling]
    [tech.v3.datatype.rolling :as dtype-rolling]
-   [london-clojurians-april-2024.util :as util]))
+   [london-clojurians-april-2024.util :as util]
+   [london-clojurians-april-2024.hana :as hana]))
 
 (def book-sales
   (tc/dataset "data/book_sales.csv" {:key-fn (comp keyword str/lower-case)}))
@@ -46,6 +47,22 @@
                                                   :MSIZE 1}]
                                   [ht/line-layer {:Y :hardcover-prediction}]]))
 
+(-> book-sales
+    ;; they're already sorted, but just to be sure
+    (tc/order-by :date :asc)
+    (tc/add-column :time (range (tc/row-count book-sales)))
+    (stats/add-predictions :hardcover [:time]
+                           {:model-type :smile.regression/ordinary-least-square})
+    (hana/plot {:X :time
+                :YSCALE {:zero false}
+                :TITLE "Time plot of book sales"})
+    (hana/layer hana/point-layer {:Y :hardcover
+                                  :MCOLOR "black"})
+    (hana/layer hana/line-layer {:Y :hardcover
+                                 :MCOLOR "grey"
+                                 :MSIZE 1})
+    (hana/layer hana/line-layer {:Y :hardcover-prediction}))
+
 ;; Lag
 
 (-> book-sales
@@ -72,6 +89,23 @@
                                   [ht/line-layer {:Y :hardcover-prediction}]]))
 
 
+(-> book-sales
+    (ds-rolling/rolling {:window-type :fixed
+                         :window-size (inc 1)
+                         :relative-window-position :left}
+                        {:lag (ds-rolling/first :hardcover)})
+    (stats/add-predictions :hardcover [:lag]
+                           {:model-type :smile.regression/ordinary-least-square})
+    (hana/plot {:X :lag
+                :YSCALE {:zero false}
+                :XSCALE {:zero false}
+                :WIDTH 400
+                :TITLE "Lag plot of book sales"})
+    (hana/layer hana/point-layer {:Y :hardcover
+                                  :MCOLOR "black"})
+    (hana/layer hana/line-layer {:Y :hardcover-prediction}))
+
+
 ;; There are two kinds of features unique to time series: time-step features and lag features.
 
 ;; Time-step features are features we can derive directly from the time index. The most basic time-step feature is the time dummy, which counts off time steps in the series from beginning to end.
@@ -82,8 +116,6 @@
 
 ;; (defn kebab [word]
 ;;   (str/split word #"[A-Z]"))
-
-
 
 (def tunnel
   (tc/dataset "data/tunnel.csv" {:key-fn (comp keyword str/lower-case)}))
@@ -115,6 +147,26 @@
                                                   :MCOLOR "grey"
                                                   :MSIZE 1}]
                                   [ht/line-layer {:Y :numvehicles-prediction}]]))
+
+(-> tunnel
+    ;; they're already sorted, but just to be sure
+    (tc/order-by :day :asc)
+    (tc/add-column :time (range (tc/row-count tunnel)))
+    (stats/add-predictions :numvehicles [:time]
+                           {:model-type :smile.regression/ordinary-least-square})
+    (hana/plot {:X :day
+                :XTYPE :temporal
+                :YSCALE {:zero false}
+                :XSCALE {:zero false}
+                :TITLE "Time plot of tunnel traffic"})
+    (hana/layer hana/point-layer {:Y :numvehicles
+                                  :MCOLOR "black"
+                                  :MSIZE 15})
+    (hana/layer hana/line-layer {:Y :numvehicles
+                                 :MCOLOR "grey"
+                                 :MSIZE 1})
+    (hana/layer hana/line-layer {:Y :numvehicles-prediction}))
+
 
 (-> tunnel
     (tc/order-by :day :asc)
@@ -172,6 +224,23 @@
                                                    :MCOLOR "black"
                                                    :MSIZE 15}]
                                   [ht/line-layer {:Y :average}]]))
+
+
+(-> tunnel
+    (ds-rolling/rolling {:window-size 365
+                         :relative-window-position :left}
+                        {:average (ds-rolling/mean :numvehicles)})
+    ;; (stats/add-predictions :numvehicles [:lag]
+    ;;                        {:model-type :smile.regression/ordinary-least-square})
+    (hana/plot {:X :day
+                :XTYPE :temporal
+                :YSCALE {:zero false}
+                :TITLE "Tunnel traffic - 365 day moving average"})
+    (hana/layer hana/point-layer {:Y :numvehicles
+                                  :MCOLOR "black"
+                                  :MSIZE 15})
+    (hana/layer hana/line-layer {:Y :average}))
+
 
 ;; (let [signal [-1 2 4 99 4 2 -1]
 ;;       mov-avg (moving-average-filter 3)]
@@ -237,6 +306,30 @@
                                                   :MCOLOR "orange"}]
                                   [ht/line-layer {:Y :average}]]))
 
+
+(-> tunnel
+    (tc/add-column :time (range (tc/row-count tunnel)))
+    (ds-rolling/rolling {:window-size 365
+                         ;; this is important -- have to position the window left so you're only relying on past values to model future ones, this defaults to centre and that would not be useful for forecasting
+                         :relative-window-position :left}
+                        {:average (ds-rolling/mean :numvehicles)})
+    (stats/add-predictions :numvehicles [:time]
+                           {:model-type :smile.regression/ordinary-least-square})
+    (hana/plot {:X :day
+                :XTYPE :temporal
+                :YSCALE {:zero false}
+                :HEIGHT 500
+                :WIDTH 1200
+                :TITLE "Tunnel traffic - 365 day moving average"})
+    (hana/layer hana/point-layer {:Y :numvehicles
+                                  :MCOLOR "black"
+                                  :MSIZE 15})
+    (hana/layer hana/line-layer {:Y :numvehicles-prediction
+                                 :MCOLOR "orange"})
+    (hana/layer hana/line-layer {:Y :average}))
+
+
+
 (-> book-sales
     (tc/add-column :time (range (tc/row-count book-sales)))
     ;; (util/regplot :time :hardcover {:WIDTH 400})
@@ -272,6 +365,22 @@
                                     [ht/line-layer {:Y :numvehicles-prediction}]])))
 
 
+(let [with-time-dummy (-> tunnel
+                          (tc/add-column :time (range (tc/row-count tunnel))))
+      regressor (dfn/linear-regressor (:time with-time-dummy) (:numvehicles with-time-dummy))]
+  (-> with-time-dummy
+      (tc/map-columns :numvehicles-prediction [:time] regressor)
+      (hana/plot {:X :day
+                 :XTYPE :temporal
+                 :YSCALE {:zero false}
+                 :WIDTH 1000
+                 :TITLE "Tunnel traffic - dtype next regressor"})
+      (hana/layer hana/point-layer {:Y :numvehicles
+                                    :MCOLOR "black"
+                                    :MSIZE 15})
+      (hana/layer hana/line-layer {:Y :numvehicles-prediction})))
+
+
 ;; out of sample
 
 (let [ds-with-prediction (-> tunnel
@@ -305,7 +414,35 @@
                                                 :COLOR {:field :relative-time}}]]))
 
 
-
+(let [ds-with-prediction (-> tunnel
+                             (tc/add-column :time (range (tc/row-count tunnel)))
+                             (stats/add-predictions :numvehicles [:time]
+                                                    {:model-type :smile.regression/ordinary-least-square}))
+      model (-> ds-with-prediction :numvehicles-prediction meta :model)
+      last-day (-> tunnel :day last)
+      next-100-days (->> (iterate #(.plusDays % 1) last-day) (take 100))
+      forecasted-x (-> tunnel
+                       (tc/concat (tc/dataset {:day next-100-days})))
+      forecasted-predictions  (-> forecasted-x
+                                  (tc/add-column :time (range (tc/row-count forecasted-x)))
+                                  (dsmod/set-inference-target :numvehicles)
+                                  (ml/predict model)
+                                  (tc/rename-columns {:numvehicles :numvehicles-prediction}))
+      with-predictions (-> forecasted-x
+                           (tc/append forecasted-predictions)
+                           (tc/map-columns :relative-time [:numvehicles]
+                                           #(if % "Past" "Future")))]
+  (-> with-predictions
+      (hana/plot {:X :day
+                  :XTYPE :temporal
+                  :YSCALE {:zero false}
+                  :WIDTH 1000
+                  :TITLE "Tunnel traffic - 365 day moving average"})
+      (hana/layer hana/point-layer {:Y :numvehicles
+                                    :MCOLOR "black"
+                                    :MSIZE 15})
+      (hana/layer hana/line-layer {:Y :numvehicles-prediction
+                                   :COLOR {:field :relative-time}})))
 
 ;; Date dt = new Date ();
 ;; DateTime dtOrg = new DateTime (dt);
