@@ -8,7 +8,9 @@
             [aerial.hanami.common :as hc]
             [aerial.hanami.templates :as ht]
             [scicloj.metamorph.ml.toydata :as toydata]
-            [tech.v3.datatype.functional :as fun]))
+            [tech.v3.datatype.functional :as fun]
+            [tech.v3.dataset.modelling :as modelling]
+            [scicloj.metamorph.ml :as ml]))
 
 
 (defn build [[f arg]]
@@ -112,26 +114,38 @@
   ([context args]
    (layer context line-layer args)))
 
-(def linreg-stat
-  (fn [{:as context
-        :keys [template args metamorph/data]}]
-    (let [[X Y] (hc/xform [:X :Y] args)
-          xs (data X)
-          ys (data Y)
-          model (fun/linear-regressor xs ys)]
-      (assoc context
-             :metamorph/data (-> {X [(tcc/reduce-min xs)
-                                     (tcc/reduce-max xs)]}
-                                 tc/dataset
-                                 (tc/map-columns Y [X] model))))))
+(defn var-from-args [kw args]
+  (let [[xformed] (hc/xform [kw] args)]
+    (when (not= xformed kw)
+      xformed)))
 
-(defn layer-linreg
+(def smooth-stat
+  (fn [{:as context
+        :keys [template args :metamorph/data]}]
+    (let [[Y X X-predictors] (map #(var-from-args % args)
+                                  [:Y :X :X-predictors])
+          model (-> data
+                    (modelling/set-inference-target Y)
+                    (tc/select-columns (cons Y (or X-predictors [X])))
+                    (ml/train {:model-type
+                               :smile.regression/ordinary-least-square}))
+          predictions (-> data
+                          (tc/drop-columns [Y])
+                          (ml/predict model)
+                          (get Y))]
+      (-> context
+          (update :metamorph/data
+                  tc/add-or-replace-column
+                  Y
+                  predictions)))))
+
+(defn layer-smooth
   ([context]
-   (layer-linreg context {}))
+   (layer-smooth context {}))
   ([context args]
    (layer context
           line-layer
-          (merge {:hana/stat linreg-stat}
+          (merge {:hana/stat smooth-stat}
                  args))))
 
 (delay
@@ -145,7 +159,15 @@
       (plot {:X :sepal_width
              :Y :sepal_length})
       layer-point
-      layer-linreg))
+      layer-smooth))
+
+(delay
+  (-> (toydata/iris-ds)
+      (plot {:X :sepal_width
+             :Y :sepal_length})
+      layer-point
+      (layer-smooth {:X-predictors [:petal_width
+                                    :petal_length]})))
 
 (delay
   (-> (toydata/iris-ds)
