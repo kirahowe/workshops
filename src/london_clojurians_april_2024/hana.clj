@@ -60,7 +60,7 @@
 
 (def view-base (svg-rendered ht/view-base))
 (def point-chart (svg-rendered ht/point-chart))
-(def line-chart (svg-rendered ht/line-layer))
+(def line-chart (svg-rendered ht/line-chart))
 (def point-layer ht/point-layer)
 (def line-layer ht/line-layer)
 
