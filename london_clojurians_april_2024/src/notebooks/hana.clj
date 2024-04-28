@@ -100,13 +100,17 @@
            :args args})))))
 
 
-(def layer-point
-  (fn [context args]
-    (layer context point-layer args)))
+(defn layer-point
+  ([context]
+   (layer-point context {}))
+  ([context args]
+   (layer context point-layer args)))
 
-(def layer-line
-  (fn [context args]
-    (layer context line-layer args)))
+(defn layer-line
+  ([context]
+   (layer-line context {}))
+  ([context args]
+   (layer context line-layer args)))
 
 (def linreg-stat
   (fn [{:as context
@@ -121,12 +125,14 @@
                                  tc/dataset
                                  (tc/map-columns Y [X] model))))))
 
-(def layer-linreg
-  (fn [context args]
-    (layer context
-           line-layer
-           (merge {:hana/stat linreg-stat}
-                  args))))
+(defn layer-linreg
+  ([context]
+   (layer-linreg context {}))
+  ([context args]
+   (layer context
+          line-layer
+          (merge {:hana/stat linreg-stat}
+                 args))))
 
 (delay
   (-> (toydata/iris-ds)
@@ -138,8 +144,8 @@
   (-> (toydata/iris-ds)
       (plot {:X :sepal_width
              :Y :sepal_length})
-      (layer-point {})
-      (layer-linreg {})))
+      layer-point
+      layer-linreg))
 
 (delay
   (-> (toydata/iris-ds)
