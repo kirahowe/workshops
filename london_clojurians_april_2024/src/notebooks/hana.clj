@@ -1,4 +1,4 @@
-(ns london-clojurians-april-2024.hana
+(ns notebooks.hana
   (:require [scicloj.kindly.v4.kind :as kind]
             [scicloj.noj.v1.paths :as paths]
             [scicloj.tempfiles.api :as tempfiles]
@@ -27,7 +27,7 @@
     m))
 
 (defn xform [{:as context
-              :keys [template args]}]
+              :keys [template args stat]}]
   (let [dataset (:metamorph/data context)]
     (-> template
         (hc/xform args)
@@ -61,9 +61,9 @@
 (def view-base (svg-rendered ht/view-base))
 (def point-chart (svg-rendered ht/point-chart))
 (def line-chart (svg-rendered ht/line-chart))
+
 (def point-layer ht/point-layer)
 (def line-layer ht/line-layer)
-
 
 (defn plot
   ([dataset args]
@@ -94,6 +94,14 @@
            :args args})))))
 
 
+(def layer-point
+  (fn [context args]
+    (layer context point-layer args)))
+
+(def layer-line
+  (fn [context args]
+    (layer context line-layer args)))
+
 (delay
   (-> (toydata/iris-ds)
       (plot point-chart
@@ -104,12 +112,12 @@
   (-> (toydata/iris-ds)
       (plot {:TITLE "dummy"
              :MCOLOR "green"})
-      (layer point-layer
-             {:X :sepal_width
-              :Y :sepal_length
-              :MSIZE 100})
-      (layer line-layer
-             {:X :sepal_width
-              :Y :sepal_length
-              :MSIZE 4
-              :MCOLOR "brown"})))
+      (layer-point
+       {:X :sepal_width
+        :Y :sepal_length
+        :MSIZE 100})
+      (layer-line
+       {:X :sepal_width
+        :Y :sepal_length
+        :MSIZE 4
+        :MCOLOR "brown"})))
