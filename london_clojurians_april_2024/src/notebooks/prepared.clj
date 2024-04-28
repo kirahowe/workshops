@@ -67,6 +67,21 @@
                       :MSIZE 1})
     (hana/layer-line {:Y :hardcover-prediction}))
 
+
+(-> book-sales
+    ;; they're already sorted, but just to be sure
+    (tc/order-by :date :asc)
+    (tc/add-column :time (range (tc/row-count book-sales)))
+    (hana/plot {:X :time
+                :Y :hardcover
+                :YSCALE {:zero false}
+                :TITLE "Time plot of book sales"})
+    (hana/layer-point{:MCOLOR "black"})
+    (hana/layer-line {:MCOLOR "grey"
+                      :MSIZE 1})
+    hana/layer-linreg)
+
+
 ;; Lag
 
 (-> book-sales
@@ -105,9 +120,24 @@
                 :XSCALE {:zero false}
                 :WIDTH 400
                 :TITLE "Lag plot of book sales"})
-    ( hana/layer-point {:Y :hardcover
-                        :MCOLOR "black"})
+    (hana/layer-point {:Y :hardcover
+                       :MCOLOR "black"})
     (hana/layer-line {:Y :hardcover-prediction}))
+
+
+(-> book-sales
+    (ds-rolling/rolling {:window-type :fixed
+                         :window-size (inc 1)
+                         :relative-window-position :left}
+                        {:lag (ds-rolling/first :hardcover)})
+    (hana/plot {:X :lag
+                :Y :hardcover
+                :YSCALE {:zero false}
+                :XSCALE {:zero false}
+                :WIDTH 400
+                :TITLE "Lag plot of book sales"})
+    (hana/layer-point {:MCOLOR "black"})
+    hana/layer-linreg)
 
 
 ;; There are two kinds of features unique to time series: time-step features and lag features.
