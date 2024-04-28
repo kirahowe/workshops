@@ -1,4 +1,4 @@
-(ns london-clojurians-april-2024.notebook
+(ns notebooks.prepared
   (:require
    [scicloj.clay.v2.api]
    [aerial.hanami.templates :as ht]
@@ -7,16 +7,20 @@
    [scicloj.metamorph.ml :as ml]
    [clojure.string :as str]
    [fastmath.signal :as signal]
+   ;; [libpython-clj2.require :refer [require-python]]
+   ;; [libpython-clj2.python :refer [py. py.. py.-] :as py]
+   ;; [scicloj.noj.v1.vis.python :as vis.python]
+   [tablecloth.column.api :as tcc]
    [scicloj.noj.v1.stats :as stats]
    [scicloj.noj.v1.vis.hanami :as hanami]
    [tablecloth.api :as tc]
    [tech.v3.dataset.rolling :as ds-rolling]
    [tech.v3.datatype.rolling :as dtype-rolling]
-   [london-clojurians-april-2024.util :as util]
+   [util :as util]
    [london-clojurians-april-2024.hana :as hana]))
 
 (def book-sales
-  (tc/dataset "data/book_sales.csv" {:key-fn (comp keyword str/lower-case)}))
+  (tc/dataset "data/book-sales.csv" {:key-fn (comp keyword str/lower-case)}))
 
 (tc/info book-sales)
 
