@@ -17,7 +17,15 @@
    [tech.v3.dataset.rolling :as ds-rolling]
    [tech.v3.datatype.rolling :as dtype-rolling]
    [util :as util]
-   [notebooks.hana :as hana]))
+   [notebooks.hana :as hana]
+   [scicloj.kindly.v4.kind :as kind]))
+
+
+^:kindly/hide-code
+(kind/hiccup [:style "
+img {max-width: 100%}
+svg {max-width: 100%}"])
+
 
 (def book-sales
   (tc/dataset "data/book-sales.csv" {:key-fn (comp keyword str/lower-case)}))
