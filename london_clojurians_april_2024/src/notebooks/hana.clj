@@ -10,7 +10,8 @@
             [scicloj.metamorph.ml.toydata :as toydata]
             [tech.v3.datatype.functional :as fun]
             [tech.v3.dataset.modelling :as modelling]
-            [scicloj.metamorph.ml :as ml]))
+            [scicloj.metamorph.ml :as ml]
+            [notebooks.hana :as hana]))
 
 
 (defn build [[f arg]]
@@ -122,29 +123,30 @@
 (def smooth-stat
   (fn [{:as context
         :keys [template args]}]
-    (let [[Y X X-predictors COLOR] (map args [:Y :X :X-predictors :COLOR])
+    (let [[Y X X-predictors grouping-columns] (map args [:Y :X :X-predictors :hana/grouping-columns])
           predictors (or X-predictors [X])
           predictions-fn (fn [dataset]
-                           (if (-> predictors count (= 1))
-                             ;; simple linear regression
-                             (let [predictor-column (-> predictors first dataset)
-                                   model (fun/linear-regressor predictor-column
-                                                               (dataset Y))]
-                               (map model predictor-column))
-                             ;; multiple linear regression
-                             (let [_ (require 'scicloj.ml.smile.regression)
-                                   model (-> dataset
-                                             (modelling/set-inference-target Y)
-                                             (tc/select-columns (cons Y predictors))
-                                             (ml/train {:model-type
-                                                        :smile.regression/ordinary-least-square}))]
-                               (-> dataset
-                                   (tc/drop-columns [Y])
-                                   (ml/predict model)
-                                   (get Y)))))
-          grouping-columns (->> [(-> :COLOR args keyword)]
-                                (remove nil?)
-                                seq)
+                           (let [nonmissing-Y (-> dataset
+                                                  (tc/drop-missing [Y]))]
+                             (if (-> predictors count (= 1))
+                               ;; simple linear regression
+                               (let [model (fun/linear-regressor (-> predictors first nonmissing-Y)
+                                                                 (nonmissing-Y Y))]
+                                 (->> predictors
+                                      first
+                                      dataset
+                                      (map model)))
+                               ;; multiple linear regression
+                               (let [_ (require 'scicloj.ml.smile.regression)
+                                     model (-> nonmissing-Y
+                                               (modelling/set-inference-target Y)
+                                               (tc/select-columns (cons Y predictors))
+                                               (ml/train {:model-type
+                                                          :smile.regression/ordinary-least-square}))]
+                                 (-> dataset
+                                     (tc/drop-columns [Y])
+                                     (ml/predict model)
+                                     (get Y))))))
           update-data-fn (fn [dataset]
                            (if grouping-columns
                              (-> dataset
@@ -185,7 +187,21 @@
     (-> (toydata/iris-ds)
         (plot {:X :sepal_width
                :Y :sepal_length
-               :COLOR "species"})
+               :COLOR "species"
+               :hana/grouping-columns [:species]})
+        layer-point
+        layer-smooth))
+
+  (delay
+    (-> (toydata/iris-ds)
+        (tc/concat (tc/dataset {:sepal_width (range 4 10)
+                                :sepal_length (repeat 6 nil)}))
+        (tc/map-columns :relative-time
+                        [:sepal_length]
+                        #(if % "Past" "Future"))
+        (plot {:X :sepal_width
+               :Y :sepal_length
+               :COLOR "relative-time"})
         layer-point
         layer-smooth))
 
