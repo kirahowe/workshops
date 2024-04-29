@@ -65,8 +65,7 @@
 ;; generate a dataset of overall average sales
 
 (def store-sales
-  (-> "data/store-sales.csv"
-      (tc/dataset {:key-fn (comp keyword #(str/replace % "_" "-"))})))
+  (tc/dataset "data/store-sales.nippy"))
 
 (def average-sales
   (-> store-sales
