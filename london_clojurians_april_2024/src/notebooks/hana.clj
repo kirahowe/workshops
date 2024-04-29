@@ -114,40 +114,49 @@
   ([context args]
    (layer context line-layer args)))
 
-(defn var-from-args [kw args]
-  (let [[xformed] (hc/xform [kw] args)]
-    (when (not= xformed kw)
-      xformed)))
-
+#_(defn var-from-args [kw args]
+    (let [[xformed] (hc/xform [kw] args)]
+      (when (not= xformed kw)
+        xformed)))
 
 (def smooth-stat
   (fn [{:as context
-        :keys [template args :metamorph/data]}]
-    (let [[Y X X-predictors] (map #(var-from-args % args)
-                                  [:Y :X :X-predictors])
+        :keys [template args]}]
+    (let [[Y X X-predictors COLOR] (map args [:Y :X :X-predictors :COLOR])
           predictors (or X-predictors [X])
-          predictions (if (-> predictors count (= 1))
-                        ;; simple linear regression
-                        (let [predictor-column (-> predictors first data)
-                              model (fun/linear-regressor predictor-column
-                                                          (data Y))]
-                          (map model predictor-column))
-                        ;; multiple linear regression
-                        (let [_ (require 'scicloj.ml.smile.regression)
-                              model (-> data
-                                        (modelling/set-inference-target Y)
-                                        (tc/select-columns (cons Y predictors))
-                                        (ml/train {:model-type
-                                                   :smile.regression/ordinary-least-square}))]
-                          (-> data
-                              (tc/drop-columns [Y])
-                              (ml/predict model)
-                              (get Y))))]
+          predictions-fn (fn [dataset]
+                           (if (-> predictors count (= 1))
+                             ;; simple linear regression
+                             (let [predictor-column (-> predictors first dataset)
+                                   model (fun/linear-regressor predictor-column
+                                                               (dataset Y))]
+                               (map model predictor-column))
+                             ;; multiple linear regression
+                             (let [_ (require 'scicloj.ml.smile.regression)
+                                   model (-> dataset
+                                             (modelling/set-inference-target Y)
+                                             (tc/select-columns (cons Y predictors))
+                                             (ml/train {:model-type
+                                                        :smile.regression/ordinary-least-square}))]
+                               (-> dataset
+                                   (tc/drop-columns [Y])
+                                   (ml/predict model)
+                                   (get Y)))))
+          grouping-columns (->> [(-> :COLOR args keyword)]
+                                (remove nil?)
+                                seq)
+          update-data-fn (fn [dataset]
+                           (if grouping-columns
+                             (-> dataset
+                                 (tc/group-by grouping-columns)
+                                 (tc/add-or-replace-column Y predictions-fn)
+                                 tc/ungroup)
+                             (-> dataset
+                                 (tc/add-or-replace-column Y predictions-fn))))]
       (-> context
-          (update :metamorph/data
-                  tc/add-or-replace-column
-                  Y
-                  predictions)))))
+          (update :metamorph/data update-data-fn)))))
+
+
 
 (defn layer-smooth
   ([context]
@@ -169,6 +178,14 @@
     (-> (toydata/iris-ds)
         (plot {:X :sepal_width
                :Y :sepal_length})
+        layer-point
+        layer-smooth))
+
+  (delay
+    (-> (toydata/iris-ds)
+        (plot {:X :sepal_width
+               :Y :sepal_length
+               :COLOR "species"})
         layer-point
         layer-smooth))
 
@@ -198,4 +215,5 @@
          {:X :sepal_width
           :Y :sepal_length
           :MSIZE 4
-          :MCOLOR "brown"}))))
+          :MCOLOR "brown"})))
+  )
