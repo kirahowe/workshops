@@ -17,7 +17,7 @@
    [tech.v3.dataset.rolling :as ds-rolling]
    [tech.v3.datatype.rolling :as dtype-rolling]
    [util :as util]
-   [london-clojurians-april-2024.hana :as hana]))
+   [notebooks.hana :as hana]))
 
 (def book-sales
   (tc/dataset "data/book-sales.csv" {:key-fn (comp keyword str/lower-case)}))
@@ -60,12 +60,27 @@
     (hana/plot {:X :time
                 :YSCALE {:zero false}
                 :TITLE "Time plot of book sales"})
-    (hana/layer hana/point-layer {:Y :hardcover
-                                  :MCOLOR "black"})
-    (hana/layer hana/line-layer {:Y :hardcover
-                                 :MCOLOR "grey"
-                                 :MSIZE 1})
-    (hana/layer hana/line-layer {:Y :hardcover-prediction}))
+    (hana/layer-point{:Y :hardcover
+                      :MCOLOR "black"})
+    (hana/layer-line {:Y :hardcover
+                      :MCOLOR "grey"
+                      :MSIZE 1})
+    (hana/layer-line {:Y :hardcover-prediction}))
+
+
+(-> book-sales
+    ;; they're already sorted, but just to be sure
+    (tc/order-by :date :asc)
+    (tc/add-column :time (range (tc/row-count book-sales)))
+    (hana/plot {:X :time
+                :Y :hardcover
+                :YSCALE {:zero false}
+                :TITLE "Time plot of book sales"})
+    (hana/layer-point{:MCOLOR "black"})
+    (hana/layer-line {:MCOLOR "grey"
+                      :MSIZE 1})
+    hana/layer-smooth)
+
 
 ;; Lag
 
@@ -105,9 +120,24 @@
                 :XSCALE {:zero false}
                 :WIDTH 400
                 :TITLE "Lag plot of book sales"})
-    (hana/layer hana/point-layer {:Y :hardcover
-                                  :MCOLOR "black"})
-    (hana/layer hana/line-layer {:Y :hardcover-prediction}))
+    (hana/layer-point {:Y :hardcover
+                       :MCOLOR "black"})
+    (hana/layer-line {:Y :hardcover-prediction}))
+
+
+(-> book-sales
+    (ds-rolling/rolling {:window-type :fixed
+                         :window-size (inc 1)
+                         :relative-window-position :left}
+                        {:lag (ds-rolling/first :hardcover)})
+    (hana/plot {:X :lag
+                :Y :hardcover
+                :YSCALE {:zero false}
+                :XSCALE {:zero false}
+                :WIDTH 400
+                :TITLE "Lag plot of book sales"})
+    (hana/layer-point {:MCOLOR "black"})
+    hana/layer-smooth)
 
 
 ;; There are two kinds of features unique to time series: time-step features and lag features.
@@ -163,13 +193,30 @@
                 :YSCALE {:zero false}
                 :XSCALE {:zero false}
                 :TITLE "Time plot of tunnel traffic"})
-    (hana/layer hana/point-layer {:Y :numvehicles
-                                  :MCOLOR "black"
-                                  :MSIZE 15})
-    (hana/layer hana/line-layer {:Y :numvehicles
-                                 :MCOLOR "grey"
-                                 :MSIZE 1})
-    (hana/layer hana/line-layer {:Y :numvehicles-prediction}))
+    (hana/layer-point {:Y :numvehicles
+                       :MCOLOR "black"
+                       :MSIZE 15})
+    (hana/layer-line {:Y :numvehicles
+                      :MCOLOR "grey"
+                      :MSIZE 1})
+    (hana/layer-line {:Y :numvehicles-prediction}))
+
+
+(-> tunnel
+    ;; they're already sorted, but just to be sure
+    (tc/order-by :day :asc)
+    (tc/add-column :time (range (tc/row-count tunnel)))
+    (hana/plot {:X :day
+                :Y :numvehicles
+                :XTYPE :temporal
+                :YSCALE {:zero false}
+                :XSCALE {:zero false}
+                :TITLE "Time plot of tunnel traffic"})
+    (hana/layer-point {:MCOLOR "black"
+                       :MSIZE 15})
+    (hana/layer-line {:MCOLOR "grey"
+                      :MSIZE 1})
+    (hana/layer-smooth {:X-predictors [:time]}))
 
 
 (-> tunnel
@@ -240,10 +287,10 @@
                 :XTYPE :temporal
                 :YSCALE {:zero false}
                 :TITLE "Tunnel traffic - 365 day moving average"})
-    (hana/layer hana/point-layer {:Y :numvehicles
-                                  :MCOLOR "black"
-                                  :MSIZE 15})
-    (hana/layer hana/line-layer {:Y :average}))
+    (hana/layer-point {:Y :numvehicles
+                       :MCOLOR "black"
+                       :MSIZE 15})
+    (hana/layer-line {:Y :average}))
 
 
 ;; (let [signal [-1 2 4 99 4 2 -1]
@@ -325,12 +372,33 @@
                 :HEIGHT 500
                 :WIDTH 1200
                 :TITLE "Tunnel traffic - 365 day moving average"})
-    (hana/layer hana/point-layer {:Y :numvehicles
-                                  :MCOLOR "black"
-                                  :MSIZE 15})
-    (hana/layer hana/line-layer {:Y :numvehicles-prediction
-                                 :MCOLOR "orange"})
-    (hana/layer hana/line-layer {:Y :average}))
+    (hana/layer-point {:Y :numvehicles
+                       :MCOLOR "black"
+                       :MSIZE 15})
+    (hana/layer-line {:Y :numvehicles-prediction
+                      :MCOLOR "orange"})
+    (hana/layer-line {:Y :average}))
+
+
+
+(-> tunnel
+    (tc/add-column :time (range (tc/row-count tunnel)))
+    (ds-rolling/rolling {:window-size 365
+                         ;; this is important -- have to position the window left so you're only relying on past values to model future ones, this defaults to centre and that would not be useful for forecasting
+                         :relative-window-position :left}
+                        {:average (ds-rolling/mean :numvehicles)})
+    (hana/plot {:X :day
+                :Y :numvehicles
+                :XTYPE :temporal
+                :YSCALE {:zero false}
+                :HEIGHT 500
+                :WIDTH 1200
+                :TITLE "Tunnel traffic - 365 day moving average"})
+    (hana/layer-point {:MCOLOR "black"
+                       :MSIZE 15})
+    (hana/layer-smooth {:X-predictors [:time]
+                        :MCOLOR "orange"})
+    (hana/layer-line {:Y :average}))
 
 
 
@@ -375,14 +443,14 @@
   (-> with-time-dummy
       (tc/map-columns :numvehicles-prediction [:time] regressor)
       (hana/plot {:X :day
-                 :XTYPE :temporal
-                 :YSCALE {:zero false}
-                 :WIDTH 1000
-                 :TITLE "Tunnel traffic - dtype next regressor"})
-      (hana/layer hana/point-layer {:Y :numvehicles
-                                    :MCOLOR "black"
-                                    :MSIZE 15})
-      (hana/layer hana/line-layer {:Y :numvehicles-prediction})))
+                  :XTYPE :temporal
+                  :YSCALE {:zero false}
+                  :WIDTH 1000
+                  :TITLE "Tunnel traffic - dtype next regressor"})
+      (hana/layer-point {:Y :numvehicles
+                         :MCOLOR "black"
+                         :MSIZE 15})
+      (hana/layer-line {:Y :numvehicles-prediction})))
 
 
 ;; out of sample
@@ -442,11 +510,11 @@
                   :YSCALE {:zero false}
                   :WIDTH 1000
                   :TITLE "Tunnel traffic - 365 day moving average"})
-      (hana/layer hana/point-layer {:Y :numvehicles
-                                    :MCOLOR "black"
-                                    :MSIZE 15})
-      (hana/layer hana/line-layer {:Y :numvehicles-prediction
-                                   :COLOR {:field :relative-time}})))
+      (hana/layer-point {:Y :numvehicles
+                         :MCOLOR "black"
+                         :MSIZE 15})
+      (hana/layer-line {:Y :numvehicles-prediction
+                        :COLOR {:field :relative-time}})))
 
 ;; Date dt = new Date ();
 ;; DateTime dtOrg = new DateTime (dt);
