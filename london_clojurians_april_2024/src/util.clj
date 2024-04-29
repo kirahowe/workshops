@@ -10,7 +10,7 @@
 (swap! hc/_defaults
        assoc
        :BACKGROUND "white"
-       :WIDTH 700)
+       :WIDTH 500)
 
 ;; (def connected-point-plot
 ;;   {:transform :TRANSFORM
