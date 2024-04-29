@@ -1,4 +1,4 @@
-(ns notebooks.prepared
+(ns notebooks.prepared-draft
   (:require
    [scicloj.clay.v2.api]
    [aerial.hanami.templates :as ht]
@@ -26,6 +26,19 @@
 img {max-width: 100%}
 svg {max-width: 100%}"])
 
+
+;; # Clojure for Data Deep Dive
+;; London Clojurians April 2024
+
+;; ## Overview
+
+
+
+;; ## Comparing different regression models
+
+
+
+;; ## Time series
 
 (def book-sales
   (tc/dataset "data/book-sales.csv" {:key-fn (comp keyword str/lower-case)}))

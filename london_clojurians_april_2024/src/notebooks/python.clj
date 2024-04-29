@@ -201,9 +201,9 @@
                            :MCOLOR "black"
                            :MSIZE 15})
         (hana/layer-line {:Y :avg-sales-prediction
-                          :COLOR :relative-time
-                          })
-        ))
+                          ;; :COLOR :relative-time
+                          })))
+
 
 ;; (->  with-predictions
       ;; (hana/plot {:X :trend
