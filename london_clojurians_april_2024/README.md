@@ -4,7 +4,15 @@ This is the source code from the London Clojurians deep dive on Clojure's data e
 
 ## Overview
 
+This workshop is a whirlwind tour of some of Clojure's data processing and analysis capabilities. It represents the current best practices for accomplishing basic data science tasks in Clojure. Many of the tools demonstrated here at the time of this talk are works-in-progress. In the video I discuss the work that is ongoing in the community to polish these tools and improve their usability. Everything is possible, but we are working on hard making many of these tools more ergonomic for people who are more familiar with statistics and data science than they are with software engineering.
 
+The talk covers
+- data pre-processing using tablecloth
+- comparing ML models
+- basic time-series analysis
+- python interop
+
+Among other things.
 
 ## Dependencies
 

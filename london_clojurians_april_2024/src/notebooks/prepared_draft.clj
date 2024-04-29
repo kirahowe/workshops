@@ -30,7 +30,6 @@ svg {max-width: 100%}"])
 ;; # Clojure for Data Deep Dive
 ;; London Clojurians April 2024
 
-;; ## Overview
 
 
 

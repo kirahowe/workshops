@@ -3,6 +3,7 @@
    [aerial.hanami.templates :as ht]
    [clojure.string :as str]
    [libpython-clj2.require :refer [require-python]]
+   [libpython-clj2.python :refer [py. py.. py.-] :as py]
    [notebooks.hana :as hana]
    [scicloj.metamorph.ml :as ml]
    [scicloj.ml.tribuo]
