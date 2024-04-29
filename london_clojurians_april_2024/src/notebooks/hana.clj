@@ -119,20 +119,30 @@
     (when (not= xformed kw)
       xformed)))
 
+
 (def smooth-stat
   (fn [{:as context
         :keys [template args :metamorph/data]}]
     (let [[Y X X-predictors] (map #(var-from-args % args)
                                   [:Y :X :X-predictors])
-          model (-> data
-                    (modelling/set-inference-target Y)
-                    (tc/select-columns (cons Y (or X-predictors [X])))
-                    (ml/train {:model-type
-                               :smile.regression/ordinary-least-square}))
-          predictions (-> data
-                          (tc/drop-columns [Y])
-                          (ml/predict model)
-                          (get Y))]
+          predictors (or X-predictors [X])
+          predictions (if (-> predictors count (= 1))
+                        ;; simple linear regression
+                        (let [predictor-column (-> predictors first data)
+                              model (fun/linear-regressor predictor-column
+                                                          (data Y))]
+                          (map model predictor-column))
+                        ;; multiple linear regression
+                        (let [_ (require 'scicloj.ml.smile.regression)
+                              model (-> data
+                                        (modelling/set-inference-target Y)
+                                        (tc/select-columns (cons Y predictors))
+                                        (ml/train {:model-type
+                                                   :smile.regression/ordinary-least-square}))]
+                          (-> data
+                              (tc/drop-columns [Y])
+                              (ml/predict model)
+                              (get Y))))]
       (-> context
           (update :metamorph/data
                   tc/add-or-replace-column
