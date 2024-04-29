@@ -474,9 +474,9 @@
                                                     {:model-type :smile.regression/ordinary-least-square}))
       model (-> ds-with-prediction :numvehicles-prediction meta :model)
       last-day (-> tunnel :day last)
-      next-100-days (->> (iterate #(.plusDays % 1) last-day) (take 100))
+      future-days (->> (iterate #(.plusDays % 1) last-day) (take 100))
       forecasted-x (-> tunnel
-                       (tc/concat (tc/dataset {:day next-100-days})))
+                       (tc/concat (tc/dataset {:day future-days})))
       forecasted-predictions  (-> forecasted-x
                                   (tc/add-column :time (range (tc/row-count forecasted-x)))
                                   (dsmod/set-inference-target :numvehicles)
@@ -505,9 +505,9 @@
                                                     {:model-type :smile.regression/ordinary-least-square}))
       model (-> ds-with-prediction :numvehicles-prediction meta :model)
       last-day (-> tunnel :day last)
-      next-100-days (->> (iterate #(.plusDays % 1) last-day) (take 100))
+      future-days (->> (iterate #(.plusDays % 1) last-day) (take 100))
       forecasted-x (-> tunnel
-                       (tc/concat (tc/dataset {:day next-100-days})))
+                       (tc/concat (tc/dataset {:day future-days})))
       forecasted-predictions  (-> forecasted-x
                                   (tc/add-column :time (range (tc/row-count forecasted-x)))
                                   (dsmod/set-inference-target :numvehicles)
@@ -528,6 +528,33 @@
                          :MSIZE 15})
       (hana/layer-line {:Y :numvehicles-prediction
                         :COLOR {:field :relative-time}})))
+
+
+
+
+(let [last-day (-> tunnel :day last)
+      future-size 100
+      future-days (->> (iterate #(.plusDays % 1) last-day) (take future-size))]
+  (-> tunnel
+      (tc/concat (tc/dataset {:day future-days
+                              :numvehicles (repeat future-size nil)}))
+      (tc/add-column :time #(-> % tc/row-count range))
+      (tc/map-columns :relative-time [:numvehicles]
+                      #(if % "Past" "Future"))
+      (hana/plot {:X :day
+                  :Y :numvehicles
+                  :XTYPE :temporal
+                  :YSCALE {:zero false}
+                  :WIDTH 1000
+                  :TITLE "Tunnel traffic - 365 day moving average"})
+      (hana/layer-point {:Y :numvehicles
+                         :MCOLOR "black"
+                         :MSIZE 15})
+      (hana/layer-smooth {:X-predictors [:time]
+                          :COLOR {:field :relative-time}})))
+
+
+
 
 ;; Date dt = new Date ();
 ;; DateTime dtOrg = new DateTime (dt);
