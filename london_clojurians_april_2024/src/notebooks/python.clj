@@ -3,11 +3,18 @@
    [aerial.hanami.templates :as ht]
    [clojure.string :as str]
    [libpython-clj2.require :refer [require-python]]
+   [notebooks.hana :as hana]
+   [scicloj.metamorph.ml :as ml]
+   [scicloj.ml.tribuo]
    [scicloj.noj.v1.vis.hanami :as hanami]
    [tablecloth.api :as tc]
    [tablecloth.column.api :as tcc]
+   [tech.v3.dataset.modelling :as modelling]
    [tech.v3.dataset.rolling :as ds-rolling]
-   [util :as util]))
+   [tech.v3.datatype.functional :as dfn]
+   [util :as util])
+  (:import
+   org.tribuo.regression.sgd.objectives.SquaredLoss))
 
 ;; (->> (re-seq #"[A-Z]?[^A-Z]*" s)
 ;;        (map str/lower-case)
@@ -143,23 +150,87 @@
                  (tc/map-columns :trend-cubed [:trend] (fn [col] (tcc/* col col col))))
 
       ;; this is why objects are terrible
-      noidea (pd/to_datetime (->> (tc/convert-types average-sales :date :string)
-                                  :date
-                                  (apply vector))
-                             :format "%Y-%m-%d" :errors "coerce")
-      y-index (pd/PeriodIndex noidea :freq "D")
+      index (pd/to_datetime (->> (tc/convert-types average-sales :date :string)
+                                 :date
+                                 (apply vector))
+                            :format "%Y-%m-%d" :errors "coerce")
+      y-index (pd/PeriodIndex index :freq "D")
       dp (statsd/DeterministicProcess :index y-index :order 3)
       X (py/py. dp in_sample)
       X-forecast (py/py. dp out_of_sample 90)
       tc-in-sample (df-to-ds X)
-      tc-forecast (df-to-ds X-forecast)]
-  tc-forecast
-  ;; (-> X py/->jvm)
-  ;; tc-forecast
-  )
+      tc-forecast (df-to-ds X-forecast)
 
-;; (py/from-import statsmodels.tsa.deterministic DeterministicProcess)
+      all-joined (-> tc-in-sample
+                     (tc/concat tc-forecast)
+                     (tc/convert-types :date :string)
+                     ;; note! note inner-join, that will delete the rows with missing `avg-sales` vals
+                     (tc/full-join (-> y (tc/convert-types :date :string)) :date))
 
-;; (let [dp (statsd/DeterministicProcess {:index  :order 11})
-;;       X (py/py. dp in_sample)]
-;;   X)
+      training (-> tc-in-sample
+                   (tc/convert-types :date :string)
+                   (tc/full-join (-> y (tc/convert-types :date :string)) :date))
+      model (-> training
+                (modelling/set-inference-target :avg-sales)
+                (tc/select-columns [:trend :avg-sales])
+
+                (ml/train {:model-type :scicloj.ml.tribuo/regression
+                           :tribuo-components [{:name "squared"
+                                                :type "org.tribuo.regression.sgd.objectives.SquaredLoss"}
+                                               {:name "trainer"
+                                                :type "org.tribuo.regression.sgd.linear.LinearSGDTrainer"
+                                                :properties  {:epochs "100"
+                                                              :minibatchSize "1"
+                                                              :objective "squared"}}]
+                           :tribuo-trainer-name "trainer"}))
+      predictions (-> all-joined
+                      (modelling/set-inference-target :avg-sales)
+                      (ml/predict model)
+                      (tc/rename-columns {:avg-sales :avg-sales-prediction}))
+      with-predictions (-> all-joined
+                           (tc/append predictions)
+                           (tc/map-columns :relative-time [:avg-sales-prediction]
+                                           #(if % "Past" "Future")))]
+  (->   with-predictions
+        (hana/plot {:X :trend
+                  ;; :XTYPE :temporal
+                    :YSCALE {:zero false}
+                    :WIDTH 1000
+                    :TITLE "Average sales trend"})
+        (hana/layer-point {:Y :avg-sales
+                           :MCOLOR "black"
+                           :MSIZE 15})
+        (hana/layer-line {:Y :avg-sales-prediction
+                          :COLOR :relative-time
+                          })
+        ))
+
+;; (->  with-predictions
+      ;; (hana/plot {:X :trend
+      ;;             ;; :XTYPE :temporal
+      ;;             :YSCALE {:zero false}
+      ;;             :WIDTH 1000
+      ;;             :TITLE "Average sales trend"})
+      ;; (hana/layer-point {:Y :avg-sales
+      ;;                    :MCOLOR "black"
+      ;;                    :MSIZE 15})
+      ;; (hana/layer-line {:Y :avg-sales-predictions})
+      ;; )
+  ;; )
+
+(comment
+  (let [tunnel (tc/dataset "data/tunnel.csv" {:key-fn (comp keyword str/lower-case)})
+        with-time-dummy (-> tunnel
+                            (tc/add-column :time (range (tc/row-count tunnel))))
+        regressor (dfn/linear-regressor (:time with-time-dummy) (:numvehicles with-time-dummy))]
+    (-> with-time-dummy
+        (tc/map-columns :numvehicles-prediction [:time] regressor)
+        (hana/plot {:X :day
+                    :XTYPE :temporal
+                    :YSCALE {:zero false}
+                    :WIDTH 1000
+                    :TITLE "Tunnel traffic - dtype next regressor"})
+        (hana/layer-point {:Y :numvehicles
+                           :MCOLOR "black"
+                           :MSIZE 15})
+        (hana/layer-line {:Y :numvehicles-prediction}))))

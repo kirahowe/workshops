@@ -158,49 +158,44 @@
           (merge {:hana/stat smooth-stat}
                  args))))
 
-(delay
-  (-> (toydata/iris-ds)
-      (plot point-chart
-            {:X :sepal_width
-             :Y :sepal_length})))
+(comment
+  (delay
+    (-> (toydata/iris-ds)
+        (plot point-chart
+              {:X :sepal_width
+               :Y :sepal_length})))
 
-(delay
-  (-> (toydata/iris-ds)
-      (plot {:X :sepal_width
-             :Y :sepal_length})
-      layer-point))
+  (delay
+    (-> (toydata/iris-ds)
+        (plot {:X :sepal_width
+               :Y :sepal_length})
+        layer-point
+        layer-smooth))
 
-(delay
-  (-> (toydata/iris-ds)
-      (plot {:X :sepal_width
-             :Y :sepal_length})
-      layer-point
-      layer-smooth))
+  (delay
+    (-> (toydata/iris-ds)
+        (plot {:X :sepal_width
+               :Y :sepal_length})
+        layer-point))
 
-(delay
-  (-> (toydata/iris-ds)
-      (plot {:X :sepal_width
-             :Y :sepal_length})
-      layer-point))
+  (delay
+    (-> (toydata/iris-ds)
+        (plot {:X :sepal_width
+               :Y :sepal_length})
+        layer-point
+        (layer-smooth {:X-predictors [:petal_width
+                                      :petal_length]})))
 
-(delay
-  (-> (toydata/iris-ds)
-      (plot {:X :sepal_width
-             :Y :sepal_length})
-      layer-point
-      (layer-smooth {:X-predictors [:petal_width
-                                    :petal_length]})))
-
-(delay
-  (-> (toydata/iris-ds)
-      (plot {:TITLE "dummy"
-             :MCOLOR "green"})
-      (layer-point
-       {:X :sepal_width
-        :Y :sepal_length
-        :MSIZE 100})
-      (layer-line
-       {:X :sepal_width
-        :Y :sepal_length
-        :MSIZE 4
-        :MCOLOR "brown"})))
+  (delay
+    (-> (toydata/iris-ds)
+        (plot {:TITLE "dummy"
+               :MCOLOR "green"})
+        (layer-point
+         {:X :sepal_width
+          :Y :sepal_length
+          :MSIZE 100})
+        (layer-line
+         {:X :sepal_width
+          :Y :sepal_length
+          :MSIZE 4
+          :MCOLOR "brown"}))))
