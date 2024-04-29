@@ -453,6 +453,19 @@
       (hana/layer-line {:Y :numvehicles-prediction})))
 
 
+(let [with-time-dummy (-> tunnel
+                          (tc/add-column :time (range (tc/row-count tunnel))))]
+  (-> with-time-dummy
+      (hana/plot {:X :day
+                  :Y :numvehicles
+                  :XTYPE :temporal
+                  :YSCALE {:zero false}
+                  :WIDTH 1000
+                  :TITLE "Tunnel traffic - dtype next regressor"})
+      (hana/layer-point {:MCOLOR "black"
+                         :MSIZE 15})
+      (hana/layer-smooth {:X-predictors [:time]})))
+
 ;; out of sample
 
 (let [ds-with-prediction (-> tunnel
