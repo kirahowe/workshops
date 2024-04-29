@@ -168,8 +168,20 @@
   (-> (toydata/iris-ds)
       (plot {:X :sepal_width
              :Y :sepal_length})
+      layer-point))
+
+(delay
+  (-> (toydata/iris-ds)
+      (plot {:X :sepal_width
+             :Y :sepal_length})
       layer-point
       layer-smooth))
+
+(delay
+  (-> (toydata/iris-ds)
+      (plot {:X :sepal_width
+             :Y :sepal_length})
+      layer-point))
 
 (delay
   (-> (toydata/iris-ds)
