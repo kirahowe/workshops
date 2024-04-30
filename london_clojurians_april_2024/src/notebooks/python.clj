@@ -4,7 +4,7 @@
    [clojure.string :as str]
    [libpython-clj2.require :refer [require-python]]
    [libpython-clj2.python :refer [py. py.. py.-] :as py]
-   [notebooks.hana :as hana]
+   [utils.hana :as hana]
    [scicloj.metamorph.ml :as ml]
    [scicloj.ml.tribuo]
    [scicloj.noj.v1.vis.hanami :as hanami]
@@ -13,7 +13,7 @@
    [tech.v3.dataset.modelling :as modelling]
    [tech.v3.dataset.rolling :as ds-rolling]
    [tech.v3.datatype.functional :as dfn]
-   [util :as util])
+   [utils.util :as util])
   (:import
    org.tribuo.regression.sgd.objectives.SquaredLoss))
 
@@ -24,16 +24,11 @@
 ;;        (apply str))
 ;; )
 
-(defn pascal-to-kebab-case [s]
-  (->> s
-       (re-seq #"[A-Z]?[^A-Z]*")
-       (map str/lower-case)
-       (remove empty?)
-       (str/join "-")))
+
 
 (def us-retail-sales
   (tc/dataset "data/us-retail-sales.csv"
-              {:key-fn (comp keyword pascal-to-kebab-case)}))
+              {:key-fn (comp keyword util/pascal-to-kebab-case)}))
 
 ;; plot food and beverage sales:
 
@@ -197,13 +192,13 @@
                   ;; :XTYPE :temporal
                     :YSCALE {:zero false}
                     :WIDTH 1000
-                    :TITLE "Average sales trend"})
+                    :TITLE "Average sales trend"
+                    ;; :COLOR :relative-time
+                    :hana/grouping-columns [:relative-time]})
         (hana/layer-point {:Y :avg-sales
                            :MCOLOR "black"
                            :MSIZE 15})
-        (hana/layer-line {:Y :avg-sales-prediction
-                          ;; :COLOR :relative-time
-                          })))
+        (hana/layer-line {:Y :avg-sales-prediction})))
 
 
 ;; (->  with-predictions

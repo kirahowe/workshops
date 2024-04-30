@@ -1,4 +1,4 @@
-(ns notebooks.hana
+(ns utils.hana
   (:require [scicloj.kindly.v4.kind :as kind]
             [scicloj.noj.v1.paths :as paths]
             [scicloj.tempfiles.api :as tempfiles]
@@ -10,8 +10,7 @@
             [scicloj.metamorph.ml.toydata :as toydata]
             [tech.v3.datatype.functional :as fun]
             [tech.v3.dataset.modelling :as modelling]
-            [scicloj.metamorph.ml :as ml]
-            [notebooks.hana :as hana]))
+            [scicloj.metamorph.ml :as ml]))
 
 
 (defn build [[f arg]]

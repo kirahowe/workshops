@@ -16,7 +16,7 @@
    [tablecloth.api :as tc]
    [tech.v3.dataset.rolling :as rolling]
    [tech.v3.datatype.rolling :as dtype-rolling]
-   [util :as util]
+   [utils.util :as util]
    [notebooks.hana :as hana]
    [scicloj.kindly.v4.kind :as kind]))
 
