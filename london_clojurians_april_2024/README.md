@@ -42,7 +42,3 @@ conda activate libpython-clj
 - `:library-path` is found by running `python3 -c 'import sysconfig; print(sysconfig.get_paths())'`
 
 Once these are set properly, libpython-clj should work.
-
-
-
-<!-- The notebook for this workshop has some dependencies that do not work on Apple chips. If you are following along using an Apple system with an M1/M2 chip, you will need to install a x64 JVM and set `JAVA_HOME` to its home path. I recommend using `jabba` to manage multiple JVM installations. -->
