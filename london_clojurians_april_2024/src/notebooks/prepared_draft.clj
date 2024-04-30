@@ -14,7 +14,7 @@
    [scicloj.noj.v1.stats :as stats]
    [scicloj.noj.v1.vis.hanami :as hanami]
    [tablecloth.api :as tc]
-   [tech.v3.dataset.rolling :as ds-rolling]
+   [tech.v3.dataset.rolling :as rolling]
    [tech.v3.datatype.rolling :as dtype-rolling]
    [util :as util]
    [notebooks.hana :as hana]
@@ -105,10 +105,10 @@ svg {max-width: 100%}"])
 ;; Lag
 
 (-> book-sales
-    (ds-rolling/rolling {:window-type :fixed
+    (rolling/rolling {:window-type :fixed
                          :window-size (inc 1)
                          :relative-window-position :left}
-                        {:lag (ds-rolling/first :hardcover)})
+                        {:lag (rolling/first :hardcover)})
     ;; (util/regplot {:x :lag
     ;;                :y :hardcover
     ;;                : false})
@@ -129,10 +129,10 @@ svg {max-width: 100%}"])
 
 
 (-> book-sales
-    (ds-rolling/rolling {:window-type :fixed
+    (rolling/rolling {:window-type :fixed
                          :window-size (inc 1)
                          :relative-window-position :left}
-                        {:lag (ds-rolling/first :hardcover)})
+                        {:lag (rolling/first :hardcover)})
     (stats/add-predictions :hardcover [:lag]
                            {:model-type :smile.regression/ordinary-least-square})
     (hana/plot {:X :lag
@@ -146,10 +146,10 @@ svg {max-width: 100%}"])
 
 
 (-> book-sales
-    (ds-rolling/rolling {:window-type :fixed
+    (rolling/rolling {:window-type :fixed
                          :window-size (inc 1)
                          :relative-window-position :left}
-                        {:lag (ds-rolling/first :hardcover)})
+                        {:lag (rolling/first :hardcover)})
     (hana/plot {:X :lag
                 :Y :hardcover
                 :YSCALE {:zero false}
@@ -241,10 +241,10 @@ svg {max-width: 100%}"])
 
 (-> tunnel
     (tc/order-by :day :asc)
-    (ds-rolling/rolling {:window-type :fixed
+    (rolling/rolling {:window-type :fixed
                          :window-size (inc 1)
                          :relative-window-position :left}
-                        {:lag (ds-rolling/first :numvehicles)})
+                        {:lag (rolling/first :numvehicles)})
     ;; (stats/add-predictions :numvehicles [:lag]
     ;;                        {:model-type :smile.regression/ordinary-least-square})
     ;; (hanami/plot (-> ht/layer-chart
@@ -279,9 +279,9 @@ svg {max-width: 100%}"])
 ;;                                                   {:relative-window-position :left}))]]))
 
 (-> tunnel
-    (ds-rolling/rolling {:window-size 365
+    (rolling/rolling {:window-size 365
                          :relative-window-position :left}
-                        {:average (ds-rolling/mean :numvehicles)})
+                        {:average (rolling/mean :numvehicles)})
     ;; (stats/add-predictions :numvehicles [:lag]
     ;;                        {:model-type :smile.regression/ordinary-least-square})
     (hanami/combined-plot ht/layer-chart
@@ -298,9 +298,9 @@ svg {max-width: 100%}"])
 
 
 (-> tunnel
-    (ds-rolling/rolling {:window-size 365
+    (rolling/rolling {:window-size 365
                          :relative-window-position :left}
-                        {:average (ds-rolling/mean :numvehicles)})
+                        {:average (rolling/mean :numvehicles)})
     ;; (stats/add-predictions :numvehicles [:lag]
     ;;                        {:model-type :smile.regression/ordinary-least-square})
     (hana/plot {:X :day
@@ -352,10 +352,10 @@ svg {max-width: 100%}"])
 
 (-> tunnel
     (tc/add-column :time (range (tc/row-count tunnel)))
-    (ds-rolling/rolling {:window-size 365
+    (rolling/rolling {:window-size 365
                          ;; this is important -- have to position the window left so you're only relying on past values to model future ones, this defaults to centre and that would not be useful for forecasting
                          :relative-window-position :left}
-                        {:average (ds-rolling/mean :numvehicles)})
+                        {:average (rolling/mean :numvehicles)})
     (stats/add-predictions :numvehicles [:time]
                            {:model-type :smile.regression/ordinary-least-square})
     ;; (util/regplot :time :numvehicles ;; {:x :time
@@ -380,10 +380,10 @@ svg {max-width: 100%}"])
 
 (-> tunnel
     (tc/add-column :time (range (tc/row-count tunnel)))
-    (ds-rolling/rolling {:window-size 365
+    (rolling/rolling {:window-size 365
                          ;; this is important -- have to position the window left so you're only relying on past values to model future ones, this defaults to centre and that would not be useful for forecasting
                          :relative-window-position :left}
-                        {:average (ds-rolling/mean :numvehicles)})
+                        {:average (rolling/mean :numvehicles)})
     (stats/add-predictions :numvehicles [:time]
                            {:model-type :smile.regression/ordinary-least-square})
     (hana/plot {:X :day
@@ -403,10 +403,10 @@ svg {max-width: 100%}"])
 
 (-> tunnel
     (tc/add-column :time (range (tc/row-count tunnel)))
-    (ds-rolling/rolling {:window-size 365
+    (rolling/rolling {:window-size 365
                          ;; this is important -- have to position the window left so you're only relying on past values to model future ones, this defaults to centre and that would not be useful for forecasting
                          :relative-window-position :left}
-                        {:average (ds-rolling/mean :numvehicles)})
+                        {:average (rolling/mean :numvehicles)})
     (hana/plot {:X :day
                 :Y :numvehicles
                 :XTYPE :temporal

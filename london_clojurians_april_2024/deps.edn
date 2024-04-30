@@ -5,9 +5,9 @@
         org.scicloj/noj {:mvn/version "1-alpha34"}
         com.cnuernber/charred {:mvn/version "1.033"}
         generateme/fastmath {:mvn/version "2.4.0"}
-        scicloj/metamorph.ml {:mvn/version "0.7.8"}
+        scicloj/metamorph.ml {:mvn/version "0.8.2"}
         org.scicloj/scicloj.ml.tribuo {:mvn/version "0.1.0"}
         scicloj/scicloj.ml.tribuo {:git/url "https://github.com/scicloj/scicloj.ml.tribuo"
-                                   :git/sha "1bde7c4030c9b355d3c4f8a0707dadbf11849310"}
+                                   :git/sha "6cda676b64e83194d0960d4cb8b88390d0c12e33"}
         org.tribuo/tribuo-all {:mvn/version "4.3.1" :extension "pom"}
         clj-python/libpython-clj {:mvn/version "2.025"}}}
