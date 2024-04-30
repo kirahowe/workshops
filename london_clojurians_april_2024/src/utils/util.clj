@@ -1,12 +1,14 @@
-(ns util
+(ns utils.util
   (:require
    [aerial.hanami.common :as hc]
    [aerial.hanami.templates :as ht]
+   [clojure.string :as str]
+   [libpython-clj2.python :as py]
    [scicloj.noj.v1.stats :as stats]
    [scicloj.noj.v1.vis.hanami :as hanami]
    [tablecloth.api :as tc]
-   [tech.v3.dataset.rolling :as ds-rolling])
-  (:import org.tribuo.regression.rtree.CARTRegressionTrainer))
+   [tablecloth.column.api :as tcc]
+   [tech.v3.dataset.rolling :as ds-rolling]))
 
 (swap! hc/_defaults
        assoc
@@ -25,10 +27,30 @@
                         :type "org.tribuo.regression.sgd.objectives.SquaredLoss"}
                        {:name "trainer"
                         :type "org.tribuo.regression.sgd.linear.LinearSGDTrainer"
-                        :properties {:epochs "10"
-                                     :objective "squared"}
-                        }]
+                        :properties  {:epochs "100"
+                                      :minibatchSize "1"
+                                      :objective "squared"}}]
    :tribuo-trainer-name "trainer"})
+
+(defn pascal-to-kebab-case [s]
+  (->> s
+       (re-seq #"[A-Z]?[^A-Z]*")
+       (map str/lower-case)
+       (remove empty?)
+       (str/join "-")))
+
+(defn df-to-ds [df]
+  (let [index-col (-> df (py/py.- index) py/as-list tcc/column)
+        rest-of-ds (-> df
+                       py/->jvm
+                       (tc/dataset {:key-fn (comp keyword #(str/replace % "_" "-"))})
+                       (tc/update-columns :all (partial map second))
+                       (tc/order-by :trend))]
+    ;; (tc/append index-col rest-of-ds)
+    (-> (tc/dataset {:date index-col})
+        (tc/append rest-of-ds))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def smile-random-forest-config
   {:model-type :smile.regression/random-forest})
