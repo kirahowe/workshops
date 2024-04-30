@@ -5,48 +5,33 @@
    [scicloj.noj.v1.stats :as stats]
    [scicloj.noj.v1.vis.hanami :as hanami]
    [tablecloth.api :as tc]
-   [tech.v3.dataset.rolling :as ds-rolling]))
+   [tech.v3.dataset.rolling :as ds-rolling])
+  (:import org.tribuo.regression.rtree.CARTRegressionTrainer))
 
 (swap! hc/_defaults
        assoc
        :BACKGROUND "white"
        :WIDTH 500)
 
-;; (def connected-point-plot
-;;   {:transform :TRANSFORM
-;;    :usermeta :USERDATA
-;;    :config {:bar :CFGBAR :view :CGFVIEW :axis :CFGAXIS :range :CFGRANGE}
-;;    :width :WIDTH
-;;    :background :BACKGROUND
-;;    :title :TITLE
-;;    :layer [{:mark
-;;             {:type "circle"
-;;              :point :POINT
-;;              :size :MSIZE
-;;              :color :MCOLOR
-;;              :stroke :MSTROKE
-;;              :strokeDash :MSDASH
-;;              :tooltip :MTOOLTIP
-;;              :filled :MFILLED}
-;;             :selection :SELECTION
-;;             :transform :TRANSFORM
-;;             :encoding :ENCODING}
-;;            {:mark
-;;             {:type "line"
-;;              :point :POINT
-;;              :size :MSIZE
-;;              :color :MCOLOR
-;;              :stroke :MSTROKE
-;;              :strokeDash :MSDASH
-;;              :tooltip :MTOOLTIP
-;;              :filled :MFILLED}
-;;             :selection :SELECTION
-;;             :transform :TRANSFORM
-;;             :encoding :ENCODING}]
-;;    :resolve :RESOLVE
-;;    :height :HEIGHT
-;;    :data
-;;    {:values :VALDATA :url :UDATA :sequence :SDATA :name :NDATA :format :DFMT}})
+(def tribuo-cart-config
+  {:model-type :scicloj.ml.tribuo/regression
+   :tribuo-components [{:name "trainer"
+                        :type "org.tribuo.regression.rtree.CARTRegressionTrainer"}]
+   :tribuo-trainer-name "trainer"})
+
+(def tribuo-linear-sgd-config
+  {:model-type :scicloj.ml.tribuo/regression
+   :tribuo-components [{:name "squared"
+                        :type "org.tribuo.regression.sgd.objectives.SquaredLoss"}
+                       {:name "trainer"
+                        :type "org.tribuo.regression.sgd.linear.LinearSGDTrainer"
+                        :properties {:epochs "10"
+                                     :objective "squared"}
+                        }]
+   :tribuo-trainer-name "trainer"})
+
+(def smile-random-forest-config
+  {:model-type :smile.regression/random-forest})
 
 (defn regplot [ds x y]
   ;; (let [{:keys [X Y ]}])
