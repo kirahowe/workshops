@@ -1,5 +1,12 @@
 (ns notebooks.live
-  (:require [tablecloth.api :as tc]))
+  (:require
+   [tablecloth.api :as tc]
+   [scicloj.kindly.v4.kind :as kind]))
+
+^:kindly/hide-code
+(kind/hiccup [:style "
+img {max-width: 100%}
+svg {max-width: 100%}"])
 
 ;; # Clojure for Data Deep Dive
 ;; London Clojurians April 2024
