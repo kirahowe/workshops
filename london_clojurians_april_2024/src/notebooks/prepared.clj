@@ -216,7 +216,6 @@ svg {max-width: 100%}"])
                        :MSIZE 20})
     (hana/layer-smooth {:X-predictors [:lag]}))
 
-(require-python '[statsmodels.tsa.deterministic :as statsd])
 
 (-> tunnel-with-time-dummy
     (hana/plot {:X :day
@@ -234,6 +233,8 @@ svg {max-width: 100%}"])
 ;; ### Trends
 
 ;; A trend is slowest moving part of series -- a persistent, long-term change in the mean of the series. Can try to model a trend with a time-step feature once you've identified the shape of it. A moving average can help you detect the shape of a trend.
+
+(require-python '[statsmodels.tsa.deterministic :as statsd])
 
 (def store-sales
   (tc/dataset "data/store-sales.nippy"))
