@@ -204,17 +204,11 @@
     (hana/plot {:X :lag
                 :Y :numvehicles
                 :XTYPE :temporal
-                :TITLE "Time plot of tunnel traffic"
+                :TITLE "Lag plot of tunnel traffic"
                 :YSCALE {:zero false}})
     (hana/layer-point {:MCOLOR "black"
                        :MSIZE 20})
     (hana/layer-smooth {:X-predictors [:lag]}))
-
-
-
-
-
-
 
 (require-python '[statsmodels.tsa.deterministic :as statsd])
 
