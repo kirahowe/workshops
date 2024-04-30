@@ -1,14 +1,10 @@
 (ns utils.util
   (:require
    [aerial.hanami.common :as hc]
-   [aerial.hanami.templates :as ht]
    [clojure.string :as str]
    [libpython-clj2.python :as py]
-   [scicloj.noj.v1.stats :as stats]
-   [scicloj.noj.v1.vis.hanami :as hanami]
    [tablecloth.api :as tc]
-   [tablecloth.column.api :as tcc]
-   [tech.v3.dataset.rolling :as ds-rolling]))
+   [tablecloth.column.api :as tcc]))
 
 (swap! hc/_defaults
        assoc
@@ -49,52 +45,3 @@
     ;; (tc/append index-col rest-of-ds)
     (-> (tc/dataset {:date index-col})
         (tc/append rest-of-ds))))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(def smile-random-forest-config
-  {:model-type :smile.regression/random-forest})
-
-(defn regplot [ds x y]
-  ;; (let [{:keys [X Y ]}])
-  (-> ds
-      (stats/add-predictions y [x]
-                             {:model-type :smile.regression/ordinary-least-square})
-      (hanami/combined-plot ht/layer-chart
-
-                            {:X x
-                             :XSCALE {:zero false}
-                             :YSCALE {:zero false}}
-                            :LAYER [[ht/point-layer {:Y y
-                                                     :MCOLOR "black"}]
-                                    ;; [ht/line-layer {:Y y
-                                    ;;                 :MCOLOR "grey"
-                                    ;;                 :MSIZE 1}]
-                                    [ht/line-layer {:Y (-> y name (str "-prediction") keyword)}]])))
-
-(defn rolling-window-plot [ds {:keys [window-opts hanami-opts]}]
-  (let [{:keys [Y X]} hanami-opts]
-    (-> ds
-        (tc/order-by X)
-        (ds-rolling/rolling (merge {:window-type :variable
-                                    :column-name X
-                                    :relative-window-position :left}
-                                   window-opts)
-
-                            {:average (ds-rolling/mean Y)})
-        (hanami/combined-plot ht/layer-chart
-                              hanami-opts
-                              :LAYER [[ht/point-layer {:Y Y
-                                                       :MCOLOR "black"}]
-                                      [ht/line-layer {:Y Y
-                                                      :MCOLOR "grey"
-                                                      :MSIZE 1}]
-                                      [ht/line-layer {:Y :average}]]))))
-
-;; (defn smooth [ds ]
-;;   (-> ds
-;;       (stats/add-predictions)
-;;       (hanami/line-layer)))
-
-(defn out-of-sample [ds model]
-  )

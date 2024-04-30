@@ -1,8 +1,9 @@
 (ns notebooks.prepared
   (:require
    [clojure.string :as str]
-   [libpython-clj2.require :refer [require-python]]
    [libpython-clj2.python :as py]
+   [libpython-clj2.require :refer [require-python]]
+   [scicloj.kindly.v4.kind :as kind]
    [scicloj.metamorph.ml :as ml]
    [scicloj.metamorph.ml.loss :as loss]
    [scicloj.ml.tribuo]
@@ -15,6 +16,11 @@
    [tech.v3.datatype.functional :as dfn]
    [utils.hana :as hana]
    [utils.util :as util]))
+
+^:kindly/hide-code
+(kind/hiccup [:style "
+img {max-width: 100%}
+svg {max-width: 100%}"])
 
 ;; # Clojure for Data Deep Dive
 ;; London Clojurians April 2024
@@ -257,7 +263,7 @@
                        :MSIZE 20})
     (hana/layer-line {:Y :trend}))
 
-;; Basic forecasting
+;; ### Basic forecasting
 
 (let [last-day (-> tunnel :day last)
       future-size 100
@@ -333,10 +339,7 @@
                       (modelling/set-inference-target :avg-sales)
                       (ml/predict model)
                       (tc/rename-columns {:avg-sales :avg-sales-prediction}))
-      with-predictions (-> (tc/append ds-with-forecast predictions)
-                           ;; (tc/map-columns  :relative-time [:avg-sales-prediction]
-                           ;;                  #(if % "Past" "Future"))
-                           )]
+      with-predictions (-> (tc/append ds-with-forecast predictions))]
   (-> with-predictions
       (hana/plot {:X :date
                   :XTYPE :temporal
@@ -346,18 +349,6 @@
       (hana/layer-point {:Y :avg-sales
                          :MCOLOR "grey"
                          :MSIZE 15})
-      (hana/layer-line {:Y :avg-sales-prediction}))
+      (hana/layer-line {:Y :avg-sales-prediction})))
 
-  ;; (-> ds-with-forecast
-  ;;     (hana/plot {:X :date
-  ;;                 :XTYPE :temporal
-  ;;                 :YSCALE {:zero false}
-  ;;                 :WIDTH 1200
-  ;;                 :TITLE "Average sales trend"
-  ;;                 :hana/grouping-columns [:relative-time]})
-  ;;     (hana/layer-point {:Y :avg-sales
-  ;;                        :MCOLOR "grey"
-  ;;                        :MSIZE 15})
-  ;;     (hana/layer-smooth {:X-predictors [:trend]
-  ;;                         :COLOR {:field :relative-time}}))
-  )
+;; Are you interested in designing some of these APIs? Thinking about how to design APIs for statisticians? Join us!
