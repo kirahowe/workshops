@@ -39,6 +39,6 @@ conda activate libpython-clj
 4. Update the [`python.edn`](./python.edn) file to use the paths to your conda environment. You can find these values from the command line:
 
 - `:python-executable` is found by running `which python3`
-- `:library-path` is found by running `python3 -c 'import sysconfig; print(sysconfig.get_paths())'`
+- `:library-path` is found by running `python3 -c 'import sysconfig; print(sysconfig.get_paths()["stdlib"])'`
 
 Once these are set properly, libpython-clj should work.
