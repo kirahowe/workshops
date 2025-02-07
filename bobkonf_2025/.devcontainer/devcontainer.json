@@ -1,0 +1,19 @@
+{
+  "name": "BobKonf 2025",
+  "dockerfile": "Dockerfile"
+  "workspaceFolder": "/workspaces/workshops/bobkonf_2025"
+  "image": "mcr.microsoft.com/devcontainers/universal:2",
+  "features": {
+    "ghcr.io/devcontainers-extra/features/clojure-asdf:2": {
+      "version": "1.12.0"
+    }
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "betterthantomorrow.calva"
+      ]
+    }
+  },
+  "postCreateCommand": "echo 'Welcome!' && clojure -version"
+}
