@@ -18,41 +18,61 @@
 (rest languages)
 (conj languages "JavaScript")
 
-;; Vectors: ordered, indexable
+;; Note that data structures are immutable. Adding something to a list creates a new list. The old one is never modified. This is true of all Clojure data structures.
+languages
 
+;; Vectors: ordered, indexable
 (def conferences ["ClojureD" "Heart of Clojure" "Clojure/conj" "re:Clojure"])
 
 (get conferences 1) ;; vectors are 0-indexed
 (conj conferences "BobKonf")
 
 ;; Sets: unique elements, fast lookups
-
 (def cities #{"London" "Berlin" "Brussels" "Alexandria"})
 
 (contains? cities "Berlin")
 (conj cities "Durham")
 
 ;; Maps: key-value data structure
-
 (def conference
   {:name "BobKonf"
    :city "Berlin"
    :venue "Scandic Hotel Potsdamer Platz"
    :date "2025-03-14"})
 
-;; Maps are functions:
+(get conference :name)
 
+;; ## 2. Functional data transformation
+
+;; ### Data structures
+
+;; Most data structures in Clojure are also first-class functions.
+
+;; Vectors are functions that look up by index, meaning this:
+(conferences 2)
+
+;; is equivalent to this:
+(get conferences 2)
+
+;; Sets are functions that act as membership test functions:
+(cities "London")
+(cities "Paris")
+
+;; Maps are functions:
 (conference :date)
 
-;; Keywords in Clojure are symbolic identifiers that evaluate to themselves:
+;; And they're smart functions -- they can accept a second argument to use instead of `nil` for a missing value:
 
+(conference :topic)
+(conference :topic "Programming")
+
+;; Keywords in Clojure are symbolic identifiers that evaluate to themselves:
 :city
 
 ;; They are commonly used as keys in maps because they are also functions:
-
 (:city conference)
 
-;; ## 2. Functional data transformation
+;; ### Data transformation
 
 ;; Rather than writing imperative loops, in Clojure we compose functions to transform data. Clojure has built-in threading operators, which allow us to write readable and easily-understandable pipelines for working on our data.
 
@@ -71,21 +91,56 @@
                 {:name "Charlie" :languages #{"Clojure" "Python"}}
                 {:name "Daniel" :languages #{"Clojure" "R"}}])
 
-;; TODO: example
-
-;; Clojure comes with many useful built-in functions for operating on collections, most of which are based on either `map`, `filter`, or `reduce`. Combining these makes complex data transformations very succinct:
-
-(def attendees [{:name "Alice" :languages #{"Clojure" "Java"}}
-                {:name "Bob" :languages #{"Python" "Java" "R"}}
-                {:name "Charlie" :languages #{"Clojure" "Python"}}
-                {:name "Daniel" :languages #{"Clojure" "R"}}])
-
 ;; e.g. find all Clojure enthusiasts:
 (->> attendees
      (filter #((:languages %) "Clojure"))
      (map :name))
 
-;; TODO: example
+;; Clojure also has advanced built-in support for reduction transformations:
+
+;; e.g. compute total revenue in EUR
+(def revenue
+  {"Ticket Sales" [{:amount 1200 :currency :EUR}
+                   {:amount 800 :currency :CAD}
+                   {:amount 1000 :currency :GBP}]
+   "Merchandise" [{:amount 300 :currency :EUR}
+                  {:amount 200 :currency :CAD}
+                  {:amount 900 :currency :GBP}]
+   "Concessions" [{:amount 500 :currency :EUR}
+                  {:amount 750 :currency :GBP}]
+   "Sponsors" [{:amount 1500 :currency :EUR}
+               {:amount 1200 :currency :CAD}
+               {:amount 600 :currency :GBP}]})
+
+(def exchange-rates {:CAD 1.5 :GBP 0.85})
+
+;; can be done with threading (ok):
+
+(->> revenue
+     (mapcat second)
+     (map #(* (:amount %) (exchange-rates (:currency %) 1)))
+     (reduce + 0))
+
+;; or function composition (better):
+
+(def transformer (comp (partial map #(* (:amount %) (exchange-rates (:currency %) 1)))
+                       (partial mapcat second)))
+
+(reduce + (transformer revenue))
+
+;; or as a single operation with a transducer (best):
+
+(def transducer (comp (mapcat second)
+                      (map #(* (:amount %) (exchange-rates (:currency %) 1)))))
+
+(transduce transducer + 0 revenue)
+
+;; Clojure comes with many useful built-in functions for operating on collections, most of which are based on either `map`, `filter`, or `reduce`. Combining these makes complex data transformations very succinct:
+
+;; e.g. count the total number of attendees per language
+(->> attendees
+     (mapcat :languages)
+     frequencies)
 
 ;; ## 3. Lazy evaluation
 
