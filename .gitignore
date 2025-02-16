@@ -1,3 +1,5 @@
 docs/
 classes/
 store-sales.csv
+secrets/
+*.gpg

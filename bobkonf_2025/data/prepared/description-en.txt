@@ -1,0 +1,37 @@
+NOTE: THIS CONTENT IS A MACHINE TRANSLATION OF THE ORIGINAL IN data/prepared/description-de.txt
+provided only for convenience with no guarantee of accuracy.
+
+Data provider:
+Senate Department for Mobility, Transport, Climate Protection and the Environment
+Department VI - Traffic Management
+E-Mail: Verkehrsmanagement@SenMVKU.Berlin.de
+Notes:
+On the following table sheets you will find the raw data of the counting stations for bicycle traffic in Berlin. Raw data is data that is read directly from the counting devices at the permanent counting stations and is not processed further.
+The data is compiled and published once a year at the end of the counting year.
+When evaluating and interpreting the data, the following boundary conditions must be taken into account:
+- different times for the commissioning of the counting points,
+- different climatic conditions (temperature, sunny and rainy days, snow, black ice, severe weather) and
+- data gaps, e.g. due to battery failure, defective counting devices, defective induction loops or data transmission failure.
+Furthermore, the results of the measuring points can be influenced by the following factors:
+- Detour or roadworks in the immediate vicinity of the counting points,
+- Special features of public transport (e.g. replacement services),
+- changed traffic routing at the measurement cross-section or
+- changes in the cycle path network (effects on route selection).
+Individual behavior of cyclists, such as people using the cycle path in the opposite direction and thus crossing the counting point in the wrong direction, can also distort direction-related results.
+Terms of use and limitation of liability
+(1) Any use is permitted under the conditions of the "Data License Germany - Attribution - Version 2.0" and in addition to those specified in
+ paragraph 4.
+The data and metadata provided may be used for commercial and non-commercial purposes, in particular
+1. reproduced, printed, presented, modified, processed and transmitted to third parties;
+2. be merged with own data and data of others and combined into independent new data sets;
+3. integrated into internal and external business processes, products and applications in public and non-public electronic networks.
+ networks.
+(2) When using the data, it must be ensured that the following information is included as a source reference:
+1. the name of the provider,
+2. the note "Data license Germany - Attribution - Version 2.0" or "dl-de/by-2-0"
+with reference to the license text at www.govdata.de/dl-de/by-2-0 and
+3. a reference to the data set (URI).
+(3) Changes, edits, new designs or other modifications must be indicated in the source attribution with the note
+that the data has been changed.
+(4) The data is provided without any liability for direct or indirect damage resulting from the use of the data. The owner of the data endeavors to provide meaningful information on the quality of the data, e.g. with regard to up-to-dateness,
+ correctness, completeness and accuracy of the published data, although no guarantee of quality is given. The data recipient is liable for all damages caused by the processing or use of the data by the data recipient. The Data Recipient shall indemnify the Data Provider against all third-party claims.
