@@ -8,6 +8,7 @@
    [java-time.api :as jt]
    [tablecloth.api :as tc]
    [tablecloth.column.api :as tcc]
+   [scicloj.tcutils.api :as tcu]
    [utils.dates :as dates]
    [clojure.set :as set]))
 
@@ -384,12 +385,15 @@ grouped-by-station-id
 
 ;; Now we'll figure out each station's reliability. This is where we can really see the power of tablecloth's magic handling of grouped datasets. We can just use all of the regular tablecloth functions and they will magically work on the grouped datasets.
 
-(defn- hours-since [time-string]
-  (-> time
-      jt/duration
-      (jt/as :hours)))
+;; First we get the latest measurement time. Also double check it's the same for every station:
 
-;; First we get the latest measurement time
+(-> corrected-station-ids
+    (tc/group-by [:station-id])
+    (tc/aggregate {:latest-date #(apply jt/max (:date %))})
+    :latest-date
+    distinct)
+
+;; Yes, all stations have their last measurement at 2024-12-31T23:00
 
 (def latest
   (apply jt/max (:date corrected-station-ids)))
@@ -397,63 +401,168 @@ grouped-by-station-id
 latest
 
 ;; Then get the total number of measurements for each station:
+(defn- add-location-info-and-station-count [ds location-info]
+  (-> ds
+      (tc/group-by [:station-id])
+      ;; Count the total rows minus the header row per grouped dataset
+      (tc/aggregate {:total-measurement-count #(- (tc/row-count %) 1)})
+      ;; Then join this with the location-info dataset
+      (tc/inner-join location-info :station-id)))
+
+(defn- add-uptime-col [ds end-time]
+  (-> ds
+      (tc/map-columns :expected-measurement-count
+                      [:installed]
+                      (fn [installation-date]
+                        (jt/time-between installation-date end-time :hours)))
+      (tc/map-columns :uptime
+                      [:total-measurement-count :expected-measurement-count]
+                      (fn [total expected]
+                        (/ total expected)))))
+
 (-> corrected-station-ids
-    (tc/group-by [:station-id])
-    (tc/aggregate {:total-measurement-count tc/row-count})
-    ;; Then join this with the location-info dataset
-    (tc/inner-join location-info-ds :station-id)
-    ;; Now we'll compute the expected measurements for each station, based on its installation date
-    (tc/map-columns :expected-measurement-count [:installed] (fn [installation-date]
-                                                               (-> installation-date
-                                                                   (jt/duration latest)
-                                                                   (jt/as :hours))))
-    (tc/map-columns :uptime
-                    [:total-measurement-count :expected-measurement-count]
-                    (fn [total expected]
-                      (/ total expected))))
+    (add-location-info-and-station-count location-info-ds)
+    (add-uptime-col latest))
 
+;; These look mostly good. We can see 2 have uptimes more than 100%. The most likely cause, and something we want to check for anyway, is duplicate measurements. In our combined dataset, there should only ever be one count per station/time combination. We can double check this:
 
+;; Count all rows:
+(tc/row-count corrected-station-ids)
 
+;; Count unique rows by date/station-id combination:
+(-> corrected-station-ids
+    (tc/unique-by [:date :station-id])
+    tc/row-count)
 
+;; So there are some dupes. We'll find them and see what we're dealing with:
 
+(def unique-measurement-counts
+  (-> corrected-station-ids
+      (tc/group-by [:date :station-id])
+      (tc/aggregate {:row-count tc/row-count})))
 
+;; Get the combinations of date/station-id that have more than one count:
+(-> unique-measurement-counts
+    (tc/select-rows (comp (partial < 1) :row-count)))
 
+;; Can see they're all for a single station, which is great:
+(-> unique-measurement-counts
+    (tc/select-rows (comp (partial < 1) :row-count))
+    :station-id
+    distinct)
 
+;; So we'll investigate what's going on with these rows:
+(let [duplicated-dates (-> unique-measurement-counts
+                           (tc/select-rows (comp (partial < 1) :row-count))
+                           :date
+                           distinct
+                           set)]
+  (-> corrected-station-ids
+      (tc/select-rows #(and (= "12-PA-SCH" (:station-id %))
+                            (duplicated-dates (:date %))))
+      (tc/order-by :date)))
+
+;; It seems like they're mostly identical, which is great. They're just straight up duplicates, not discrepancies we have to reconcile. We can verify this:
+
+(let [duplicated-dates (-> unique-measurement-counts
+                           (tc/select-rows (comp (partial < 1) :row-count))
+                           :date
+                           distinct
+                           set)]
+  (-> corrected-station-ids
+      (tc/select-rows #(and (= "12-PA-SCH" (:station-id %))
+                            (duplicated-dates (:date %))))
+      (tc/group-by [:date :station-id])
+      (tc/aggregate {:same-counts? = })
+      :same-counts?
+      distinct))
+
+;; They're all identical, so we will do a very naive de-dedupe on our data:
+
+(-> corrected-station-ids
+    (tc/unique-by [:date :station-id])
+    (add-location-info-and-station-count location-info-ds)
+    (add-uptime-col latest))
+
+;; And now the data looks better. We don't have any uptimes above 100%.
+
+;; One last check -- Look for suspicious values. Like counts that are not whole numbers:
+
+(-> corrected-station-ids
+    (tc/update-columns :count (partial map #(mod % 1)))
+    :count
+    distinct)
+
+;; TODO: Collect all of these checks/clean ups systematically
+
+;; Lastly, we'll save the results of this
+
+(-> corrected-station-ids
+    (tc/unique-by [:date :station-id])
+    (tc/write-csv! "data/prepared/cleaned-dataset.csv"))
 
 ;; All of this illustrates the importance of defining and using consistent IDs as a data publisher. Failing to do this makes it very hard for downstream consumers of your data to have confidence that they are interpreting it correctly.
 
 
-
-
-
-
-
-
-
-;; ;; Add quality metadata to help analyze data completeness
-;; (defn add-quality-metadata [ds]
-;;   (-> ds
-;;       ;; Add flags for missing data
-;;       (tc/add-columns
-;;        {:is-missing (complement :count)
-;;          ;; Flag suspicious values (e.g. extremely high counts)
-;;         :is-suspicious #(> (:count %) 1000)  ; We should tune this threshold
-;;          ;; Create time window identifier for analyzing gaps
-;;         :time-window (comp #(jt/truncate-to % :hours) :date)})
-;;       ;; Join with station metadata
-;;       (tc/left-join station-metadata :station-id)))
-
-
-;; We now have our raw data re-formatted for
-
 ;; ## Analysis and visualisation
 
-;; We noe
+(def dataset (tc/dataset "data/prepared/cleaned-dataset.csv" {:key-fn keyword
+                                                              :parser-fn {:date [:local-date-time "yyyy-MM-dd'T'HH:mm"]}}))
 
-;; They got parsed as floats, which are nonsensical and totally broken. We need to parse them as dates on ingestion. Unfortunately this requires reverse engineering the way Excel stores dates.
+;; We'll start by breaking our date column into year/month/day/hour so we can start to examine some trends:
+
+(def get-hour (memfn getHour))
+
+(def with-temporal-components
+  (-> dataset
+      (tc/map-columns :year :date jt/year)
+      (tc/map-columns :month :date #(jt/as % :month-of-year))
+      (tc/map-columns :day-of-week :date jt/day-of-week)
+      (tc/map-columns :hour :date get-hour)))
+
+;; Yearly trends
+(defn- calculate-yearly-trends [ds]
+  (-> ds
+      (tc/group-by [:year])
+      (tc/aggregate {:total-count (comp int tcc/sum :count)
+                     :avg-count (comp int tcc/mean :count)
+                     :stations (comp count distinct :station-id)})
+      (tc/order-by :year)))
+
+(calculate-yearly-trends with-temporal-components)
+
+;; Seasonal trends
+(-> with-temporal-components
+    (tc/group-by [:year :month])
+    (tc/aggregate {:monthly-total (comp int tcc/sum :count)
+                   :daily-avg (comp int tcc/mean :count)})
+    (tc/map-columns :season :month {12 "Winter" 1 "Winter" 2 "Winter"
+                                    3 "Spring" 4 "Spring" 5 "Spring"
+                                    6 "Summer" 7 "Summer" 8 "Summer"
+                                    9 "Fall" 10 "Fall" 11 "Fall"}))
+
+;; Weekly
+(-> with-temporal-components
+    (tc/map-columns :is-weekend :date jt/weekend?)
+    (tc/group-by [:year :is-weekend])
+    (tc/aggregate {:total-count (comp int tcc/sum :count)
+                   :avg-count (comp int tcc/mean :count)}))
 
 
-;; The relevant column is called "DateTime", we can parse it on ingestion:
+;; Daily
+(-> with-temporal-components
+    (tc/group-by [:hour])
+    (tc/aggregate {:avg-count (comp int tcc/mean :count)})
+    (tc/order-by :hour))
+
+;; Pandemic impact
+(let [pre-pandemic (tc/select-rows with-temporal-components (partial jt/before? (jt/local-date-time 2020 03 01)))
+      ;; post-pandemic (tc/select-rows with-temporal-components #(and (>= (:year %) 2020)
+      ;;                                                              (>= (:month %) 3)))
+      ]
+  pre-pandemic
+  ;; post-pandemic
+  )
 
 
 ;; ## Making this more robust for production
