@@ -1,6 +1,7 @@
 (ns notebooks.prepared
   (:require
    [clj-http.client :as http]
+   [scicloj.tableplot.v1.plotly :as plotly]
    [clojure.data :as data]
    [clojure.data.json :as json]
    [clojure.java.io :as io]
@@ -556,14 +557,47 @@ latest
     (tc/order-by :hour))
 
 ;; Pandemic impact
-(let [pre-pandemic (tc/select-rows with-temporal-components (partial jt/before? (jt/local-date-time 2020 03 01)))
-      ;; post-pandemic (tc/select-rows with-temporal-components #(and (>= (:year %) 2020)
-      ;;                                                              (>= (:month %) 3)))
-      ]
-  pre-pandemic
-  ;; post-pandemic
-  )
+(def pandemic-periods
+  (let [march-2020 (jt/local-date-time 2020 03 01)
+        may-2023 (jt/local-date-time 2023 05 01)
+        pre-pandemic (tc/select-rows with-temporal-components  #(jt/before? (:date %) march-2020))
+        pandemic (tc/select-rows with-temporal-components #(jt/<= march-2020 (:date %) may-2023))
+        post-pandemic (tc/select-rows with-temporal-components #(jt/after? (:date %) may-2023))]
+    {:pre-pandemic pre-pandemic
+     :pandemic pandemic
+     :post-pandemic post-pandemic}))
 
+(calculate-yearly-trends (:pre-pandemic pandemic-periods))
+(calculate-yearly-trends (:pandemic pandemic-periods))
+(calculate-yearly-trends (:post-pandemic pandemic-periods))
+
+(defn overall-average [ds]
+  (-> ds calculate-yearly-trends :avg-count tcc/mean))
+
+(let [pre-pandemic-average (-> pandemic-periods :pre-pandemic overall-average)
+      during-average (-> pandemic-periods :pandemic overall-average)]
+  (* 100 (/ (- during-average pre-pandemic-average) pre-pandemic-average)))
+
+(-> with-temporal-components
+    (plotly/layer-point {:=x :date
+                         :=y :count
+                         :=name "Daily counts"})
+    ;; (plotly/layer-smooth {:=x :date
+    ;;                       :=y :count
+    ;;                       :=name "Trend"
+    ;;                       :=mark-color "red"})
+    )
+
+
+;; (-> )
+#_(-> (rdatasets/datasets-iris)
+    (tc/random 10 {:seed 1})
+    (plotly/layer-point
+     {:=x :sepal-width
+      :=y :sepal-length
+      :=color :species
+      :=mark-size 20
+      :=mark-opacity 0.6}))
 
 ;; ## Making this more robust for production
 
