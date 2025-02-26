@@ -3,3 +3,5 @@ classes/
 store-sales.csv
 secrets/
 *.gpg
+.calva/
+book/
