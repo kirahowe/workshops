@@ -1,4 +1,4 @@
-{:remote-repo {:git-url "https://github.com/kirahowe/workshops/tree/bobkonf/bobkonf_2025"
+{:remote-repo {:git-url "https://github.com/kirahowe/workshops/"
                :branch "main"}
  :kindly/options {:datatables {:paging false
                                :scrollY 400
