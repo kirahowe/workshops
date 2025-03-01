@@ -1,6 +1,6 @@
 # London Clojurians April 2024
 
-This is the source code from the London Clojurians deep dive on Clojure's data ecosystem, presented live on April 30, 2024.
+This is the source code from the London Clojurians deep dive on Clojure's data ecosystem, presented live online on April 30, 2024.
 
 ## Overview
 
