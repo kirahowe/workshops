@@ -22,7 +22,7 @@
 
 ;; ## Installation Steps
 
-;; There is an excellent and more detailed [installation guide available here](https://clojure.org/guides/install_clojure) if you would like more details. A short/quick version is summarized below.
+;; There is an excellent and more detailed [installation guide available here](https://clojure.org/guides/install_clojure) if you would like more details. A short/quick version is summarized below. There is also a nix flake available in [the source repo](https://github.com/kirahowe/workshops/blob/main/bobkonf_2025/flake.nix) for nix users.
 
 ;; ### 1. Java Development Kit (JDK)
 
