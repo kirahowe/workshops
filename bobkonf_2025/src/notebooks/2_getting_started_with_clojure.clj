@@ -1,16 +1,26 @@
+^:kindly/hide-code
 (ns notebooks.getting-started-with-clojure)
 
-;; # Welcome to Clojure!
+;; # Getting started with Clojure
+
+;; ## Welcome!
 
 ;; Clojure is a modern lisp that runs on the JVM, designed for simplicity, composability, and interactive development.
+;;
+;; This is a practical guide on working with data in Clojure to introduce you to some key language concepts and syntax that will become very familiar as you work through the rest of this workshop. By the end of this tutorial, you'll understand:
+;;
+;; - Clojure's core data structures and their properties
+;; - How to approach data transformation in a functional way
+;; - The power of lazy evaluation for efficient data processing
+;; - Practical patterns for data manipulation using only the standard library
 
-;; We'll quickly explore some syntax and key features of Clojure that make it excellent for working with data before we dive in to the purpose-built tools for more sophisticated problems.
+;; We'll quickly explore some syntax and key features of Clojure that make it excellent for working with data before we dive in to the purpose-built tools for more sophisticated problems. The essentials of the standard library will always be useful, even as you learn to use more powerful libraries for more advanced data processing tasks.
 
 ;; ## 1. Data-first, data-only paradigm
 
-;; In Clojure, data is a first-class concept. Code is data and data is code, there is no barrier between the two. Clojure's built-in data structures include lists, vectors, sets and maps. They are [immutable and efficient](https://clojure.org/about/functional_programming#_immutable_data_structures).
+;; In Clojure, data is a first-class concept. Code is data and data is code, with no barrier between the two. Clojure's built-in data structures include lists, vectors, sets and maps. They are [immutable and efficient](https://clojure.org/about/functional_programming#_immutable_data_structures).
 
-;; Lists: used for code and sequences
+;; ### Lists: used for code and sequences
 
 (def languages (list "Clojure" "Python" "Julia" "R"))
 
@@ -18,22 +28,27 @@
 (rest languages)
 (conj languages "JavaScript")
 
-;; Note that data structures are immutable. Adding something to a list creates a new list. The old one is never modified. This is true of all Clojure data structures.
+;; Note that data structures are immutable. Adding something to a list creates a new list. The old one is never modified. This is true of all Clojure data structures. This still returns the original list:
+
 languages
 
-;; Vectors: ordered, indexable
+;; ### Vectors: ordered, indexable
+
 (def conferences ["ClojureD" "Heart of Clojure" "Clojure/conj" "re:Clojure"])
 
-(get conferences 1) ;; vectors are 0-indexed
+;; Vectors are 0-indexed:
+(get conferences 1)
 (conj conferences "BobKonf")
 
-;; Sets: unique elements, fast lookups
+;; ### Sets: unique elements, fast lookups
+
 (def cities #{"London" "Berlin" "Brussels" "Alexandria"})
 
 (contains? cities "Berlin")
 (conj cities "Durham")
 
-;; Maps: key-value data structure
+;; ### Maps: key-value data structure
+
 (def conference
   {:name "BobKonf"
    :city "Berlin"
@@ -42,9 +57,48 @@ languages
 
 (get conference :name)
 
+;; Clojure's standard library includes a rich set of functions for manipulating maps:
+
+(-> conference
+    (assoc :attendees 10) ;; Add a key/value
+    (dissoc :city) ;; Delete a key/value
+    (update :attendees (partial + 10)) ;; Update a value
+    )
+
+;; ### Nested data structures
+
+;; In real-world applications, you'll often see nested data structures that combine many of these together.
+
+(def conference-data
+  {:name "BobKonf"
+   :location {:city "Berlin"
+              :country "Germany"
+              :venue "Scandic Hotel"}
+   :tracks [{:name "Functional Programming"
+             :talks 12}
+            {:name "Data Science"
+             :talks 8}]
+   :attendees 100})
+
+;; Accessing nested data is simple:
+(get-in conference-data [:location :city])
+(get-in conference-data [:tracks 0 :talks])
+
+;; So is updating nested data:
+
+(assoc-in conference-data [:location :landmark] "Potsdamer Platz")
+(update-in conference-data [:tracks 1 :talks] + 2)
+
+;; ::: {.callout-tip title="A note on persistence and immutability"}
+
+;; Clojure's data structures are persistent, meaning they preserve previous versions when modified. This is achieved through structural sharing - instead of mutating existing data, new versions share most of their structure with the original, and only the changed parts are created anew, minimizing memory usage and computation. This is how operations can be completed in logarithmic or even constant time despite Clojure's immutability.
+
+;; :::
+
+
 ;; ## 2. Functional data transformation
 
-;; ### Data structures
+;; ### Data structures as functions
 
 ;; Most data structures in Clojure are also first-class functions.
 
@@ -62,7 +116,6 @@ languages
 (conference :date)
 
 ;; And they're smart functions -- they can accept a second argument to use instead of `nil` for a missing value:
-
 (conference :topic)
 (conference :topic "Programming")
 
@@ -72,7 +125,10 @@ languages
 ;; They are commonly used as keys in maps because they are also functions:
 (:city conference)
 
-;; ### Data transformation
+;; This is equivalent to:
+(get conference :city)
+
+;; ### Data transformation with threading macros
 
 ;; Rather than writing imperative loops, in Clojure we compose functions to transform data. Clojure has built-in threading operators, which allow us to write readable and easily-understandable pipelines for working on our data.
 
@@ -96,9 +152,12 @@ languages
      (filter #((:languages %) "Clojure"))
      (map :name))
 
-;; Clojure also has advanced built-in support for reduction transformations:
 
-;; e.g. compute total revenue in EUR
+;; ### Data transformation with function composition
+
+;; Clojure also has advanced built-in support for composing functions. This is especially useful for reduction transformations:
+
+;; As an example, we'll compute total revenue in EUR:
 (def revenue
   {"Ticket Sales" [{:amount 1200 :currency :EUR}
                    {:amount 800 :currency :CAD}
@@ -114,33 +173,83 @@ languages
 
 (def exchange-rates {:CAD 1.5 :GBP 0.85})
 
-;; can be done with threading (ok):
+;; Can be done with threading (ok):
 
 (->> revenue
      (mapcat second)
      (map #(* (:amount %) (exchange-rates (:currency %) 1)))
      (reduce + 0))
 
-;; or function composition (better):
+;; Or function composition (better):
 
 (def transformer (comp (partial map #(* (:amount %) (exchange-rates (:currency %) 1)))
                        (partial mapcat second)))
 
 (reduce + (transformer revenue))
 
-;; or as a single operation with a transducer (best):
+;; Or as a single operation with a transducer (best):
 
 (def transducer (comp (mapcat second)
                       (map #(* (:amount %) (exchange-rates (:currency %) 1)))))
 
 (transduce transducer + 0 revenue)
 
-;; Clojure comes with many useful built-in functions for operating on collections, most of which are based on either `map`, `filter`, or `reduce`. Combining these makes complex data transformations very succinct:
+;; Transducers are great because they eliminate intermediate collections and unnecessary processing. In the threading example, each step creates a new collection in memory, whereas the transducer version processes each element completely through all of the transformations before moving on to the next, reducing memory usage and compute time.
 
-;; e.g. count the total number of attendees per language
+;; ### Higher-order functions
+
+;; Clojure's standard library includes many useful higher-order functions, i.e. ones that take other functions as arguments.
+;;
+;; `juxt` creates a function that returns a vector of results from applying the functions it's given to the same argument(s)
+
+(def describe (juxt count first last))
+(describe [0 1 2 3 4 5 6 7])
+
+;; `comp` creates a function that composes other functions:
+
+(def neg-sum (comp - +))
+(neg-sum 1 2 3 4)
+
+;; `partial` creates a function with some arguments pre-applied
+(def add-5 (partial + 5))
+(add-5 10)
+
+;; ### Common data transformations
+
+;; Clojure comes with many useful built-in functions for operating on collections, most of which are based on either `map`, `filter`, or `reduce`. Combining these makes complex data transformations very succinct.
+
+;; Count the total number of attendees per language:
 (->> attendees
      (mapcat :languages)
      frequencies)
+
+;; Group attendees by language:
+(reduce (fn [acc {:keys [name languages]}]
+          (merge-with into acc (zipmap languages (repeat #{name}))))
+        {}
+        attendees)
+
+;; ### Destructuring
+
+;; Clojure also supports destructuring and it is commonly used to when working with complex data structures:
+
+;; Map destructuring
+(let [{:keys [name city]} conference]
+  (str name " in " city))
+
+;; Nested destructuring
+(let [{{:keys [city country]} :location} conference-data]
+  (str city ", " country))
+
+;; Vector destructuring
+(let [[first-lang second-lang] languages]
+  (str "Primary language: " first-lang ", Secondary: " second-lang))
+
+;; Destructuring in function parameters
+(defn format-conference [{:keys [name date]}]
+  (str name " on " date))
+
+(format-conference conference)
 
 ;; ## 3. Lazy evaluation
 
@@ -149,17 +258,71 @@ languages
 ;; - Composability -- allows building complex data pipelines that process elements incrementally, i.e. passing one element at a time through the entire chain of operations without evaluating or reifying unnecessary intermediate collections
 ;; - Scalability -- allows for processing larger-than-memory datasets because elements are only processed as needed
 
+;; We can write code as if we're working with infinite data, but Clojure will only compute what we actually need:
 
-;; We can write code as if we're working with infinite data, but Clojure will only compute what we actually need.
+;; Create an infinite sequence of numbers:
+(def infinite-numbers (iterate inc 0))
+
+;; Take only what we need:
+(take 10 infinite-numbers)
+
+;; Fibonacci sequence (infinite)
+(def fibonacci-seq
+  ((fn fib [a b]
+     (lazy-seq (cons a (fib b (+ a b)))))
+   0 1))
+
+;; Take first 10 Fibonacci numbers
+(take 10 fibonacci-seq)
+
+;; Find the first fibonacci number greater than 1000:
+(first (drop-while #(<= % 1000) fibonacci-seq))
+
+;; Print the 40th fibonacci number without computing the entire sequence:
+(nth fibonacci-seq 40)
+
+;; ### Processing large data efficiently
+
+;; Lazy evaluation allows processing of large collections without loading everything into memory:
+;;
+;; Simulate a large collection
+(def large-collection (range 1000000))
+
+;; This doesn't evaluate the entire collection at once. Each element flows through the pipeline one at a time:
+(->> large-collection
+     (filter even?)
+     (map #(* % %))
+     (take 5))
+
+;; ### Forcing evaluation
+
+;; Sometimes you need to force evaluation of a lazy sequence. Clojure provides [`doall`](https://clojuredocs.org/clojure.core/doall), [`dorun`](https://clojuredocs.org/clojure.core/dorun), and [`doseq`](https://clojuredocs.org/clojure.core/doseq) for different circumstances where this need arises.
+;;
+;; A common pitfall with lazy sequences is expecting things to be evaluated that don't, and the solution is to use one of the above functions.
+
+;; ### Memory considerations
+
+;; Another common pitfall with lazy sequences is "holding onto the head":
+
+;; BAD: This will eventually consume all memory
+(def all-numbers (map identity (range 1000000000)))
+
+;; GOOD: Process in chunks
+(doseq [chunk (partition-all 1000 (range 1000000000))]
+  )
+
 
 ;; ## 4. Key takeaways
 
 ;; - Data is immutable by default, i.e. functions transform data, they do not modify it
 ;; - Everything is an expression, i.e. every operation returns a value
-;; - Functions are composable
+;; - Functions are composable, complex operations are composed of simple ones
 ;; - Functions are pure by default, making code easier to reason about
 ;; - Most sequences are lazy, take advantage of them to write efficient, composable data transformations
 ;; - Clojure has a rich standard library for data manipulation
 ;; - REPL-driven development enables rapid iteration
+;; - Data oriented design leads to a focus on the shape of transformation of data
 
-;; TODO: examples here? more points?
+;; ## Next steps
+
+;; Once you're comfortable with these basics, we'll look at Clojure's data science toolkit, [noj](https://scicloj.github.io/noj/), and learn how to use it to carry out a realistic data analysis using libraries like tablecloth, tech.ml.dataset, fastmath, metamorph.ml, tableplot, and more.
