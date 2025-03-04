@@ -1,0 +1,16 @@
+{:tasks {:requires ([babashka.fs :as fs])
+         clean {:doc "Deletes the `book` directory"
+                :task (fs/delete-tree "book")}
+         build {:doc "Builds the quarto publishable-book"
+                :task (clojure "-X build/book")}
+         deploy {:doc "Deploys the book to the quarto pub location specified in `bin/_publish.yml`"
+                 :task (let [publish-file "book/_publish.yml"]
+                         (when-not (fs/exists? publish-file)
+                           (fs/copy "bin/_publish.yml" "book/_publish.yml"))
+                         (shell {:dir "book"} "quarto publish quarto-pub --no-prompt"))}
+         preview {:doc "Preview the already built book, url will be printed once it's ready"
+                  :task (shell {:dir "book"} "quarto preview")}
+         release {:doc "Clean, build, and deploy all at once"
+                  :task (do (run 'clean)
+                            (run 'build)
+                            (run 'deploy))}}}

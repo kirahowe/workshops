@@ -18,12 +18,29 @@ This workshop is a high-level overview of Clojure's data processing capabilities
 
 If you're a workshop participant or want to follow along, there is an installation guide available in the [`1_installation_guide.clj`](./src/notebooks/1_installation_guide.clj) notebook, which is also [published online here](https://kira.quarto.pub/bobkonf-2025/notebooks.installation_guide.html).
 
-## Building the book
+## Developing the book
 
-For developers of the workshop itself, the notebooks are namespaces in the [`src/notebooks`](/src/notbooks/) directory, and there is a build script to make the quarto book in `src/build.clj`, which you can call like so:
+For developers of the workshop itself, the notebooks are namespaces in the [`src/notebooks`](/src/notbooks/) directory.
+
+To build and deploy the book you will need the [quarto cli](https://quarto.org/docs/get-started/) installed on your system as well as [babashka](https://github.com/babashka/babashka#installation).
+
+There is a build script to convert our Clojure namespaces into a quarto book in `bin/build.clj`, which you can run via the configured babashka tasks like so:
 
 ```
-clojure -X build/book
+bb build
 ```
 
-Note this requires that you have the [quarto cli](https://quarto.org/docs/get-started/) installed on your system. You can then publish your own version of the book using `quarto publish`, to any of the many available free options it supports.
+There are also other bb tasks available, which you can see by running `bb tasks`:
+
+```
+The following tasks are available:
+
+clean   Deletes the `book` directory
+build   Builds the quarto publishable-book
+deploy  Deploys the book to the quarto pub location specified in `bin/_publish.yml`
+preview Preview the already built book, url will be printed once it's ready
+release Clean, build, and deploy all at once
+```
+
+
+You can update the bb tasks to publish your own version of the book using `quarto publish`, to any of the many available free options it supports. If you want to use quarto publish with your own account, update the details in `bin/_publish.yml`.

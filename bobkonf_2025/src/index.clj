@@ -1,7 +1,7 @@
 ^:kindly/hide-code
 (ns index)
 
-;; # Welcome to data science with Clojure!
+;; ## Welcome to Clojure for data science
 
 ;; This book is a published, more curated version of the workshop first presented live at Bobkonf 2025 in Berlin on March 14, 2025.
 
