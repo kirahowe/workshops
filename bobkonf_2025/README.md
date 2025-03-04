@@ -20,11 +20,11 @@ If you're a workshop participant or want to follow along, there is an installati
 
 ## Developing the book
 
-For developers of the workshop itself, the notebooks are namespaces in the [`src/notebooks`](/src/notbooks/) directory.
+For developers of the workshop itself, the notebooks are namespaces in the [`src/notebooks`](/src/notebooks/) directory.
 
-To build and deploy the book you will need the [quarto cli](https://quarto.org/docs/get-started/) installed on your system as well as [babashka](https://github.com/babashka/babashka#installation).
+To build and deploy the book you will need the [quarto cli](https://quarto.org/docs/get-started/) and [babashka](https://github.com/babashka/babashka#installation) installed on your system.
 
-There is a build script to convert our Clojure namespaces into a quarto book in `bin/build.clj`, which you can run via the configured babashka tasks like so:
+There is a build script to convert the Clojure namespaces into a quarto book in `bin/build.clj`, which you can run via the configured babashka tasks like so:
 
 ```
 bb build
@@ -42,5 +42,4 @@ preview Preview the already built book, url will be printed once it's ready
 release Clean, build, and deploy all at once
 ```
 
-
-You can update the bb tasks to publish your own version of the book using `quarto publish`, to any of the many available free options it supports. If you want to use quarto publish with your own account, update the details in `bin/_publish.yml`.
+You can update the bb tasks to publish your own version of the book using `quarto publish`, to any of the many available free options it supports. If you want to use quarto-pub with your own account, update the details in `bin/_publish.yml`.
