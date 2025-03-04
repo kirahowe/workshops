@@ -1,3 +1,4 @@
+^:kindly/hide-code
 (ns index)
 
 ;; # Welcome to data science with Clojure!
