@@ -2,17 +2,9 @@
   "Build script for the Bobkonf 2025 workshop
 
   Build the quarto publishable book:
-  clojure -X build/book
-
-  Deploy the book to gh-pages:
-  clojure -X:build deploy
-
-  Remove any currently built book:
-  clojure -T:build clean"
+  clojure -X build/book"
 
   (:require
-   [clojure.java.io :as io]
-   [clojure.string :as str]
    [scicloj.clay.v2.api :as clay]))
 
 (def output-dir "book")
