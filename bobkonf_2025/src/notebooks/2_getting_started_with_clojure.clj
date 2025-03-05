@@ -5,7 +5,7 @@
 
 ;; ## Welcome!
 
-;; Clojure is a modern lisp that runs on the JVM, designed for simplicity, composability, and interactive development.
+;; Clojure is a modern lisp that runs on the JVM, designed for simplicity, composability, and interactive development. Its functional paradigm and immutable data structures make it particularly well-suited for data processing workflows.
 ;;
 ;; This is a practical guide on working with data in Clojure to introduce you to some key language concepts and syntax that will become very familiar as you work through the rest of this workshop. By the end of this tutorial, you'll understand:
 ;;
@@ -13,8 +13,9 @@
 ;; - How to approach data transformation in a functional way
 ;; - The power of lazy evaluation for efficient data processing
 ;; - Practical patterns for data manipulation using only the standard library
+;; - How these fundamentals apply to data science workflows
 
-;; We'll quickly explore some syntax and key features of Clojure that make it excellent for working with data before we dive in to the purpose-built tools for more sophisticated problems. The essentials of the standard library will always be useful, even as you learn to use more powerful libraries for more advanced data processing tasks.
+;; We'll quickly explore some syntax and key features of Clojure that make it excellent for working with data before we dive in to the purpose-built tools for more sophisticated problems. The essentials of the standard library will always be useful, even as you learn to use more powerful libraries for advanced data processing tasks.
 
 ;; ## 1. Data-first, data-only paradigm
 
@@ -253,18 +254,20 @@ languages
 
 ;; ## 3. Lazy evaluation
 
-;; Most collection operators like these in Clojure return lazy sequences, meaning the elements of the collection are not evaluated in advance or on the fly, they are only computed once they're needed. This has many benefits:
+;; Most collection operators return lazy sequences, meaning the elements of the collection are not evaluated in advance or on the fly, they are only computed once they're needed. This has many benefits:
 ;; - Efficiency -- avoids unnecessary memory and compute usage
 ;; - Composability -- allows building complex data pipelines that process elements incrementally, i.e. passing one element at a time through the entire chain of operations without evaluating or reifying unnecessary intermediate collections
 ;; - Scalability -- allows for processing larger-than-memory datasets because elements are only processed as needed
 
-;; We can write code as if we're working with infinite data, but Clojure will only compute what we actually need:
+;; We can write code as if we're working with infinite data, but Clojure will only compute what we actually need.
 
 ;; Create an infinite sequence of numbers:
 (def infinite-numbers (iterate inc 0))
 
 ;; Take only what we need:
-(take 10 infinite-numbers)
+(->> infinite-numbers
+     (drop 30)
+     (take 10))
 
 ;; Fibonacci sequence (infinite)
 (def fibonacci-seq
@@ -296,21 +299,41 @@ languages
 
 ;; ### Forcing evaluation
 
-;; Sometimes you need to force evaluation of a lazy sequence. Clojure provides [`doall`](https://clojuredocs.org/clojure.core/doall), [`dorun`](https://clojuredocs.org/clojure.core/dorun), and [`doseq`](https://clojuredocs.org/clojure.core/doseq) for different circumstances where this need arises.
-;;
-;; A common pitfall with lazy sequences is expecting things to be evaluated that don't, and the solution is to use one of the above functions.
+;; Sometimes you need to force evaluation of a lazy sequence. Clojure provides helpers for these scenarios:
+;; - [`doall`](https://clojuredocs.org/clojure.core/doall) – Forces realization of the sequence.
+;; - [`dorun`](https://clojuredocs.org/clojure.core/dorun) – Forces realization but discards the results.
+;; - [`doseq`](https://clojuredocs.org/clojure.core/doseq) – Iterates over a sequence for side effects.
+
+;; A common pitfall with lazy sequences is expecting things to be evaluated that aren't, leading you to not see expected output or side effects, and the solution is to use one of the above functions.
 
 ;; ### Memory considerations
 
-;; Another common pitfall with lazy sequences is "holding onto the head":
+;; Another common pitfall with lazy sequences is "holding onto the head", preventing garbage collection and leading to excessive memory consumption.
 
-;; BAD: This will eventually consume all memory
-(def all-numbers (map identity (range 1000000000)))
+;; **Bad:** Holding onto the head of an infinite sequence keeps all realized elements in memory. This will accumulate indefinitely and eventually consume all memory:
+(def bad-seq (map inc (range)))
 
-;; GOOD: Process in chunks
-(doseq [chunk (partition-all 1000 (range 1000000000))]
-  )
+;; Accessing part of `bad-seq` may seem fine:
+(take 5 bad-seq)  ;; => (1 2 3 4 5)
 
+;; But since `bad-seq` is still referenced, the reference to its head prevents garbage collection of the sequence as it gets consumed and the entire sequence persists in memory, eventually consuming all of it.
+
+;; **Good:** Process elements incrementally without retaining the sequence head:
+(doseq [n (take 5 (map inc (range)))]
+  (println n))
+
+;; This is useful when you need to execute a side effect on each item in a collection. This will print each number but doesn't retain the sequence in memory.
+
+;; **Better:** Use `run!` for side-effectful operations without retaining elements:
+(run! println (take 5 (map inc (range))))
+
+;; This is another way to execute a side effectful function on each item in a collection without retaining a reference to the head of the sequence.
+
+;; **Best:** Use chunked processing to control memory usage:
+(doseq [batch (partition-all 5 (take 100 (range)))]
+  (println "Processing batch..."))
+
+;; Here `partition-all` breaks the sequence into smaller chunks that get processed independently. The head of the original sequence is not retained , allowing garbage collection to reclaim memory.
 
 ;; ## 4. Key takeaways
 
