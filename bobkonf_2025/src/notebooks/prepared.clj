@@ -494,110 +494,18 @@ latest
     :count
     distinct)
 
+
 ;; TODO: Collect all of these checks/clean ups systematically
 
 ;; Lastly, we'll save the results of this
 
-(-> corrected-station-ids
+#_(-> corrected-station-ids
     (tc/unique-by [:date :station-id])
     (tc/write-csv! "data/prepared/cleaned-dataset.csv"))
 
 ;; All of this illustrates the importance of defining and using consistent IDs as a data publisher. Failing to do this makes it very hard for downstream consumers of your data to have confidence that they are interpreting it correctly.
 
 
-;; ## Analysis and visualisation
-
-(def dataset (tc/dataset "data/prepared/cleaned-dataset.csv" {:key-fn keyword
-                                                              :parser-fn {:date [:local-date-time "yyyy-MM-dd'T'HH:mm"]}}))
-
-;; We'll start by breaking our date column into year/month/day/hour so we can start to examine some trends:
-
-(def get-hour (memfn getHour))
-
-(def with-temporal-components
-  (-> dataset
-      (tc/map-columns :year :date jt/year)
-      (tc/map-columns :month :date #(jt/as % :month-of-year))
-      (tc/map-columns :day-of-week :date jt/day-of-week)
-      (tc/map-columns :hour :date get-hour)))
-
-;; Yearly trends
-(defn- calculate-yearly-trends [ds]
-  (-> ds
-      (tc/group-by [:year])
-      (tc/aggregate {:total-count (comp int tcc/sum :count)
-                     :avg-count (comp int tcc/mean :count)
-                     :stations (comp count distinct :station-id)})
-      (tc/order-by :year)))
-
-(calculate-yearly-trends with-temporal-components)
-
-;; Seasonal trends
-(-> with-temporal-components
-    (tc/group-by [:year :month])
-    (tc/aggregate {:monthly-total (comp int tcc/sum :count)
-                   :daily-avg (comp int tcc/mean :count)})
-    (tc/map-columns :season :month {12 "Winter" 1 "Winter" 2 "Winter"
-                                    3 "Spring" 4 "Spring" 5 "Spring"
-                                    6 "Summer" 7 "Summer" 8 "Summer"
-                                    9 "Fall" 10 "Fall" 11 "Fall"}))
-
-;; Weekly
-(-> with-temporal-components
-    (tc/map-columns :is-weekend :date jt/weekend?)
-    (tc/group-by [:year :is-weekend])
-    (tc/aggregate {:total-count (comp int tcc/sum :count)
-                   :avg-count (comp int tcc/mean :count)}))
-
-
-;; Daily
-(-> with-temporal-components
-    (tc/group-by [:hour])
-    (tc/aggregate {:avg-count (comp int tcc/mean :count)})
-    (tc/order-by :hour))
-
-;; Pandemic impact
-(def pandemic-periods
-  (let [march-2020 (jt/local-date-time 2020 03 01)
-        may-2023 (jt/local-date-time 2023 05 01)
-        pre-pandemic (tc/select-rows with-temporal-components  #(jt/before? (:date %) march-2020))
-        pandemic (tc/select-rows with-temporal-components #(jt/<= march-2020 (:date %) may-2023))
-        post-pandemic (tc/select-rows with-temporal-components #(jt/after? (:date %) may-2023))]
-    {:pre-pandemic pre-pandemic
-     :pandemic pandemic
-     :post-pandemic post-pandemic}))
-
-(calculate-yearly-trends (:pre-pandemic pandemic-periods))
-(calculate-yearly-trends (:pandemic pandemic-periods))
-(calculate-yearly-trends (:post-pandemic pandemic-periods))
-
-(defn overall-average [ds]
-  (-> ds calculate-yearly-trends :avg-count tcc/mean))
-
-(let [pre-pandemic-average (-> pandemic-periods :pre-pandemic overall-average)
-      during-average (-> pandemic-periods :pandemic overall-average)]
-  (* 100 (/ (- during-average pre-pandemic-average) pre-pandemic-average)))
-
-(-> with-temporal-components
-    (plotly/layer-point {:=x :date
-                         :=y :count
-                         :=name "Daily counts"})
-    ;; (plotly/layer-smooth {:=x :date
-    ;;                       :=y :count
-    ;;                       :=name "Trend"
-    ;;                       :=mark-color "red"})
-    )
-
-
-;; (-> )
-#_(-> (rdatasets/datasets-iris)
-    (tc/random 10 {:seed 1})
-    (plotly/layer-point
-     {:=x :sepal-width
-      :=y :sepal-length
-      :=color :species
-      :=mark-size 20
-      :=mark-opacity 0.6}))
 
 ;; ## Making this more robust for production
 

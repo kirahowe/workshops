@@ -11,7 +11,8 @@
 
 (defn book [_]
   (clay/make! {:format [:quarto :html]
-               :book {:title "Reproducible Data Science with Clojure"}
+               :book {:title "Reproducible Data Science with Clojure"
+                      :page-navigation true}
                :show false
                :run-quarto false
                :base-source-path "src"
