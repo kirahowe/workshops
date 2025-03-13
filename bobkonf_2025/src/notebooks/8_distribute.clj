@@ -2,7 +2,7 @@
   (:require
    [clojure.java.io :as io]
    [clojure.tools.logging :as log]
-   [notebooks.3-extract :as ex]))
+   [notebooks.3-extract :as extract]))
 
 ;; # Distribute
 
@@ -13,7 +13,7 @@
 (defn download-dataset [url file-name]
   (try
     (log/info "Downloading dataset from " url)
-    (ex/download-dataset url file-name)
+    (extract/download-dataset url file-name)
     (log/info "Download complete: " file-name)
     {:success? true :file file-name}
 

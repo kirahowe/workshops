@@ -27,15 +27,15 @@
 
 ;; For consistency, we'll use the same file name as the one specified in the previous notebook, which means we need to require it, too:
 
-(require '[notebooks.3-extract :as ex])
+(require '[notebooks.3-extract :as extract])
 
 ;; Attempting to load the excel file as a dataset directly shows us that there are actually 16 datasets contained in this workbook:
-(tc/dataset ex/raw-data-file-name)
+(tc/dataset extract/raw-data-file-name)
 
 ;; So instead we'll make a seq of datasets, loading each sheet as its own dataset:
 
 (def raw-datasets
-  (xlsx/workbook->datasets ex/raw-data-file-name))
+  (xlsx/workbook->datasets extract/raw-data-file-name))
 
 ;; We can see what our sheets are named like this:
 (map tc/dataset-name raw-datasets)
@@ -155,17 +155,15 @@ data-2012
       (tc/select-columns (set non-empty-columns))
       ;; Now fix the column names
       ;; First column is always the date
-      (tc/rename-columns {"Zählstelle        Inbetriebnahme" :date})
+      (tc/rename-columns {"Zählstelle        Inbetriebnahme" :datetime})
       ;; Now we'll deal with the excel dates
-      (tc/update-columns :date (partial map dates/parse-excel-cell-as-date))
+      (tc/update-columns :datetime (partial map dates/parse-excel-cell-as-date))
       ;; Then we'll strip the date part off the end of the rest of the column names. Regex isn't super efficient, but that's fine we're only ever working with a small number of columns. Since these are domain-specific IDs, we'll leave them as-is, rather than converting them to keywords or something else.
-      (tc/rename-columns (complement #{:date})
+      (tc/rename-columns (complement #{:datetime})
                          #(->> % (re-matches #"^(.+)\d{2}\.\d{2}\.\d{4}") second str/trim))
 
       ;; Now we'll make the data "tidy". It's not super obvious why this is necessary with a small dataset like this, but it will be for the ones that have more columns
-      (tc/pivot->longer (complement #{:date}) {:target-columns :station-id
-                                               :value-column-name :count})
-      ;; Then save this for later
-      (tc/write! "data/prepared/data-2012.csv")))
+      (tc/pivot->longer (complement #{:datetime}) {:target-columns :station-id
+                                                   :value-column-name :count})))
 
 ;; Now that we've seen what kind of data we're working with, we'll look at how to apply these transformations systematically to the rest of the data.

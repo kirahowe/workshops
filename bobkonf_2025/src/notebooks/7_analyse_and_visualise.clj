@@ -11,7 +11,7 @@
 
 (def dataset (tc/dataset "data/prepared/cleaned-dataset.csv"
                          {:key-fn keyword
-                          :parser-fn {:date [:local-date-time "yyyy-MM-dd'T'HH:mm"]}}))
+                          :parser-fn {:datetime [:local-date-time "yyyy-MM-dd'T'HH:mm"]}}))
 
 ;; We'll start by breaking our date column into year/month/day/hour so we can start to examine some trends:
 
@@ -19,11 +19,11 @@
 
 (def with-temporal-components
   (-> dataset
-      (tc/map-columns :year :date (comp jt/value jt/year))
-      (tc/map-columns :month :date (comp jt/value jt/month))
-      (tc/map-columns :day-of-week :date jt/day-of-week)
-      (tc/map-columns :hour :date get-hour)
-      (tc/order-by :date)))
+      (tc/map-columns :year :datetime (comp jt/value jt/year))
+      (tc/map-columns :month :datetime (comp jt/value jt/month))
+      (tc/map-columns :day-of-week :datetime jt/day-of-week)
+      (tc/map-columns :hour :datetime get-hour)
+      (tc/order-by :datetime)))
 
 ;; Yearly trends
 (defn- calculate-yearly-trends [ds]
@@ -45,14 +45,14 @@
   (-> ds
       (tc/group-by [:year :month])
       (tc/aggregate {:avg-count (comp int tcc/mean :count)})
-      (tc/map-columns :date [:year :month] (fn [year month]
+      (tc/map-columns :datetime [:year :month] (fn [year month]
                                              (jt/local-date year month)))
-      (tc/order-by :date)))
+      (tc/order-by :datetime)))
 
 (-> (calculate-monthly-average with-temporal-components)
     (plotly/base {:=width 1000
                   :=title "Monthly bicycle traffic trend"})
-    (plotly/layer-line {:=x :date
+    (plotly/layer-line {:=x :datetime
                         :=y :avg-count}))
 
 ;; How has bike traffic changed from season to season over time?
@@ -76,7 +76,7 @@
 
 ;; How does weekend traffic compare to weekday traffic?
 (-> with-temporal-components
-    (tc/map-columns :is-weekend :date jt/weekend?)
+    (tc/map-columns :is-weekend :datetime jt/weekend?)
     (tc/group-by [:year :is-weekend])
     (tc/aggregate {:avg-count (comp int tcc/mean :count)})
     (plotly/base {:=width 1000})
@@ -110,9 +110,9 @@
 (def pandemic-periods
   (let [march-2020 (jt/local-date-time 2020 03 01)
         may-2023 (jt/local-date-time 2023 05 01)
-        pre-pandemic (tc/select-rows with-temporal-components  #(jt/before? (:date %) march-2020))
-        pandemic (tc/select-rows with-temporal-components #(jt/<= march-2020 (:date %) may-2023))
-        post-pandemic (tc/select-rows with-temporal-components #(jt/after? (:date %) may-2023))]
+        pre-pandemic (tc/select-rows with-temporal-components  #(jt/before? (:datetime %) march-2020))
+        pandemic (tc/select-rows with-temporal-components #(jt/<= march-2020 (:datetime %) may-2023))
+        post-pandemic (tc/select-rows with-temporal-components #(jt/after? (:datetime %) may-2023))]
     {:pre-pandemic pre-pandemic
      :pandemic pandemic
      :post-pandemic post-pandemic}))
@@ -120,25 +120,25 @@
 (-> (calculate-monthly-average (:pre-pandemic pandemic-periods))
     (plotly/base {:=width 1000
                   :=title "Impact of the pandemic on bicycle traffic"})
-    (plotly/layer-line {:=x :date
+    (plotly/layer-line {:=x :datetime
                         :=y :avg-count})
     (plotly/layer-line {:=dataset (calculate-monthly-average (:pandemic pandemic-periods))
-                        :=x :date
+                        :=x :datetime
                         :=y :avg-count})
     (plotly/layer-line {:=dataset (calculate-monthly-average (:post-pandemic pandemic-periods))
-                        :=x :date
+                        :=x :datetime
                         :=y :avg-count}))
 
 (-> (calculate-monthly-average (:pre-pandemic pandemic-periods))
     (plotly/base {:=width 1000
                   :=title "Impact of the pandemic on bicycle traffic"})
-    (plotly/layer-bar {:=x :date
+    (plotly/layer-bar {:=x :datetime
                        :=y :avg-count})
     (plotly/layer-bar {:=dataset (calculate-monthly-average (:pandemic pandemic-periods))
-                       :=x :date
+                       :=x :datetime
                        :=y :avg-count})
     (plotly/layer-bar {:=dataset (calculate-monthly-average (:post-pandemic pandemic-periods))
-                       :=x :date
+                       :=x :datetime
                        :=y :avg-count}))
 
 ;; What are the busiest times for cyclists in Berlin?
@@ -152,7 +152,7 @@
 
 ;; Find anomalous days (very high or low traffic) across all stations
 (-> with-temporal-components
-    (tc/group-by [:date])
+    (tc/group-by [:datetime])
     (tc/aggregate {:daily-total (comp int tcc/sum :count)
                    :daily-avg (comp int tcc/mean :count)
                    :std-dev (comp int tcc/standard-deviation :count)})
@@ -161,7 +161,7 @@
                     (fn [total avg stdev]
                       (/ (- total avg) stdev)))
     (plotly/base {:=width 1200 :=title "Days with unusual bicycle traffic"})
-    (plotly/layer-point {:=x :date
+    (plotly/layer-point {:=x :datetime
                          :=xtype :temporal
                          :=mark-size 4
                          :=y :z-score}))

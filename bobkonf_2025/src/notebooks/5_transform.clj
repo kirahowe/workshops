@@ -2,7 +2,7 @@
   (:require
    [clojure.java.io :as io]
    [clojure.string :as str]
-   [notebooks.3-extract :as ex]
+   [notebooks.3-extract :as extract]
    [tablecloth.api :as tc]
    [tech.v3.libs.fastexcel :as xlsx]
    [utils.dates :as dates]))
@@ -14,7 +14,7 @@
 ;; The first thing we'll do is parse dates on ingestion and reload the data, this will be more efficient:
 
 (def datasets
-  (let [is-1904-system? (dates/is-1904-system? ex/raw-data-file-name)]
+  (let [is-1904-system? (dates/is-1904-system? extract/raw-data-file-name)]
     (xlsx/workbook->datasets "data/prepared/raw-data.xlsx"
                              {:parser-fn {"Zählstelle        Inbetriebnahme"
                                           [:packed-local-date-time
@@ -28,13 +28,13 @@
 
 (defn update-column-names [ds]
   (-> ds
-      (tc/rename-columns {"Zählstelle        Inbetriebnahme" :date})
-      (tc/rename-columns (complement #{:date})
+      (tc/rename-columns {"Zählstelle        Inbetriebnahme" :datetime})
+      (tc/rename-columns (complement #{:datetime})
                          #(->> % (re-matches #"^(.+)\s\d{2}\.\d{2}\.\d{4}") second str/trim))))
 
 (defn make-tidy [ds]
-  (tc/pivot->longer ds (complement #{:date}) {:target-columns :station-id
-                                              :value-column-name :count}))
+  (tc/pivot->longer ds (complement #{:datetime}) {:target-columns :station-id
+                                                  :value-column-name :count}))
 
 ;; We can combine all of these operations and apply the same transformations to each of our yearly datasets, and then since they all have the same column names we can simply concatenate them all into one big dataset:
 
@@ -44,12 +44,6 @@
        (map update-column-names)
        (map make-tidy)
        (apply tc/concat)))
-
-
-(let [combined-dataset (->> datasets
-                            (drop 3) ;; The first 3 datasets are reference, not timeseries data
-                            transform-datasets)]
-  (tc/write! combined-dataset "data/prepared/combined-data.csv"))
 
 ;; A side note about performance -- there are more efficient ways to accomplish this, we can compare them with some basic benchmarks:
 
@@ -121,17 +115,26 @@
 
 ;; Now we have one big tidy dataset. CSV isn't really the best storage option for datasets, but for the purposes of this workshop we'll use since it's universally known and supported. Better alternative file formats exist like parquet, avro, or nippy, which we would use if we were doing this "for real".
 ;;
-;; At the very least, we can compress our big combined dataset (it's over 70MB!) to keep it in this repo:
+;; At the very least, we can compress our big combined dataset (it's over 70MB!) to keep it in this repo. First we'll write our combined tidy dataset as csv:
 
-(defn compress-csv [input-file output-file]
+(let [combined-dataset (->> datasets
+                            (drop 3) ;; The first 3 datasets are reference, not timeseries data
+                            transform-datasets)]
+  (tc/write! combined-dataset "data/prepared/combined-data.csv"))
+
+;; But we'll immediately compress it for sharing:
+
+(def combined-dataset-file-name "data/prepared/combined-data.csv.gz")
+
+(defn compress-file [input-file output-file]
   (with-open [input (io/input-stream input-file)
               output (java.util.zip.GZIPOutputStream.
                       (io/output-stream output-file))]
     (io/copy input output))
   (io/delete-file input-file))
 
-(compress-csv "data/prepared/combined-data.csv"
-              "data/prepared/combined-data.csv.gz")
+(compress-file "data/prepared/combined-data.csv"
+               combined-dataset-file-name)
 
 ;; This completes our transformation pipeline. We've:
 ;; 1. Loaded multiple Excel datasets with proper date parsing
