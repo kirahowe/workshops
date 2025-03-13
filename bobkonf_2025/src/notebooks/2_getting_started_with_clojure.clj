@@ -1,5 +1,5 @@
 ^:kindly/hide-code
-(ns notebooks.getting-started-with-clojure)
+(ns notebooks.2-getting-started-with-clojure)
 
 ;; # Getting started with Clojure
 
@@ -91,11 +91,21 @@ languages
 (update-in conference-data [:tracks 1 :talks] + 2)
 
 ;; ::: {.callout-tip title="A note on persistence and immutability"}
-
 ;; Clojure's data structures are persistent, meaning they preserve previous versions when modified. This is achieved through structural sharing - instead of mutating existing data, new versions share most of their structure with the original, and only the changed parts are created anew, minimizing memory usage and computation. This is how operations can be completed in logarithmic or even constant time despite Clojure's immutability.
-
 ;; :::
 
+;; ### File naming conventions in Clojure
+
+;; - Clojure source files use the `.clj` extension
+;; - Filenames use lowercase with underscores (snake_case): `data_processing.clj`
+;; - Namespaces use dots as separators and match directory structure: `(ns my.project.data-processing)`
+
+;; ::: {.callout-tip title="More than conventions"}
+;; "Convention" might be a little too generous to describe these file naming requirements -- if a file name and namespace don't align, the Clojure runtime won't be able to require it properly. I.e. it expects a namespace foo.bar.baz to be defined in the file src/foo/bar/baz.clj.
+;; :::
+
+;; - Within namespaces, hyphens are used instead of underscores: `data-processing` not `data_processing`
+;; - Test files typically end with `_test.clj` and are placed in a test directory wiht a structure that mirrors the `src` directory
 
 ;; ## 2. Functional data transformation
 

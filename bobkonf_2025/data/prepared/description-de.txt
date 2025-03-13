@@ -16,18 +16,16 @@ Weiterhin können die Ergebnisse der Messstellen durch folgende Faktoren beeinfl
 •              Änderungen im Radwegenetz (Auswirkungen auf die Routenwahl).
 Auch individuelles Verhalten von Radfahrenden, wie z.B. Personen, die den Radweg in entgegengesetzter Richtung benutzen und damit die Zählstelle in falscher Richtung überfahren, können richtungsbezogene Ergebnisse verzerren.  
 Nutzungsbedingungen und Haftungsbeschränkung
-(1) Jede Nutzung ist unter den Bedingungen der „Datenlizenz Deutschland – Namensnennung – Version 2.0" und zusätzlich zu den in
+(1) Jede Nutzung ist unter den Bedingungen der „Datenlizenz Deutschland – Zero – Version 2.0" und zusätzlich zu den in
  Absatz 4 genannten zulässig.
 Die bereitgestellten Daten und Metadaten dürfen für die kommerzielle und nicht kommerzielle Nutzung insbesondere
 1. vervielfältigt, ausgedruckt, präsentiert, verändert, bearbeitet sowie an Dritte übermittelt werden;
 2. mit eigenen Daten und Daten Anderer zusammengeführt und zu selbständigen neuen Datensätzen verbunden werden;
 3. in interne und externe Geschäftsprozesse, Produkte und Anwendungen in öffentlichen und nicht öffentlichen elektronischen
  Netzwerken eingebunden werden.
-(2) Bei der Nutzung ist sicherzustellen, dass folgende Angaben als Quellenvermerk enthalten sind:
-1. Bezeichnung des Bereitstellers,
-2. der Vermerk „Datenlizenz Deutschland – Namensnennung – Version 2.0" oder „dl-de/by-2-0" 
-mit Verweis auf den Lizenztext unter www.govdata.de/dl-de/by-2-0 sowie
-3. ein Verweis auf den Datensatz (URI).
+(2) Die Daten unterliegen der folgenden Lizenz:
+Datenlizenz Deutschland – Zero – Version 2.0 (dl-de-zero-2.0)
+https://www.govdata.de/dl-de/zero-2-0
 (3) Veränderungen, Bearbeitungen, neue Gestaltungen oder sonstige Abwandlungen sind im Quellenvermerk mit dem Hinweis 
 zu versehen, dass die Daten geändert wurden.
 (4) Die Bereitstellung der Daten erfolgt unter Ausschluss jeder Haftung für direkte und indirekte Schäden durch die Datennutzung. Der Eigentümer der Daten bemüht sich, aussagekräftige Informationen zur Qualtität der Daten, z.B. hinsichtlich Aktualität,

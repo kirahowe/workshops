@@ -5,6 +5,8 @@
   clojure -X build/book"
 
   (:require
+   [clojure.java.io :as io]
+   [clojure.string :as str]
    [scicloj.clay.v2.api :as clay]))
 
 (def output-dir "book")
@@ -18,11 +20,12 @@
                :base-source-path "src"
                :base-target-path output-dir
                :subdirs-to-sync ["src" "data"]
-               :source-path ["index.clj"
-                             "notebooks/1_installation_guide.clj"
-                             "notebooks/2_getting_started_with_clojure.clj"] #_(->> (io/file "src/notebooks")
-                                                                          file-seq
-                                                                          (filter #(str/ends-with? % "clj"))
-                                                                          sort)
+               :source-path (->> (io/file "src/notebooks")
+                                 file-seq
+                                 (filter #(str/ends-with? % "clj"))
+                                 sort
+                                 (map str)
+                                 (map #(str/replace % #"src/" ""))
+                                 (cons "index.clj"))
                :clean-up-target-dir true})
   (System/exit 0))

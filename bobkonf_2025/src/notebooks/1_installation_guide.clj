@@ -1,5 +1,5 @@
 ^:kindly/hide-code
-(ns notebooks.installation-guide
+(ns notebooks.1-installation-guide
   (:require [scicloj.clay.v2.api :as clay]))
 
 ;; # Installation Guide
