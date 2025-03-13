@@ -1,4 +1,4 @@
-(ns notebooks.9-distribute
+(ns notebooks.8-distribute
   (:require
    [clojure.java.io :as io]
    [clojure.tools.logging :as log]

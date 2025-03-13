@@ -5,4 +5,4 @@
 
 ^:kindly/hide-code
 (kind/md
- (slurp "src/intro.md"))
+ (slurp "src/notebooks/intro.md"))

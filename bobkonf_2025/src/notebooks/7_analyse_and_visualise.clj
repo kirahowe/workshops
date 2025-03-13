@@ -1,4 +1,4 @@
-(ns notebooks.analysis-and-visualisation
+(ns notebooks.7-analysis-and-visualisation
   (:require
    [java-time.api :as jt]
    [scicloj.tableplot.v1.plotly :as plotly]

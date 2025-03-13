@@ -1,4 +1,4 @@
-(ns notebooks.quality-control
+(ns notebooks.6-quality-control
   (:require
    [clojure.data :as data]
    [clojure.set :as set]
