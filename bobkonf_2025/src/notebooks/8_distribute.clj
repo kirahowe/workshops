@@ -1,3 +1,4 @@
+^:kindly/hide-code
 (ns notebooks.8-distribute
   (:require
    [clojure.java.io :as io]

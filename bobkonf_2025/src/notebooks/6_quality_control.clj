@@ -1,3 +1,4 @@
+^:kindly/hide-code
 (ns notebooks.6-quality-control
   (:require
    [clojure.data :as data]

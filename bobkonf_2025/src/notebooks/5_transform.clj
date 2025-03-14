@@ -1,3 +1,4 @@
+^:kindly/hide-code
 (ns notebooks.5-transform
   (:require
    [clojure.java.io :as io]
@@ -90,7 +91,10 @@
         (map (comp make-tidy update-column-names drop-empty-columns))
         doall))
 
-  ;; This combines our transformations into a single function that gets applied to each dataset. This doesn't really save us anything yet, but the nice thing about writing the transformation this way is that it makes it trivially easy to take advantage of one of Clojure's super powers, really amazing built-in support for concurrency:
+  ;; This combines our transformations into a single function that gets applied to each dataset.
+  ;; This doesn't really save us anything yet, but the nice thing about writing the transformation
+  ;; this way is that it makes it trivially easy to take advantage of one of Clojure's super
+  ;; powers, really amazing built-in support for concurrency:
 
   (benchmark
    (->> datasets
@@ -98,7 +102,8 @@
         (pmap (comp make-tidy update-column-names drop-empty-columns))
         doall))
 
-  ;; This approach can significantly improve performance for CPU-bound transformations. Another option that can optimize memory usage even further is to take advantage of transducers:
+  ;; This approach can significantly improve performance for CPU-bound transformations. Another
+  ;; option that can optimize memory usage even further is to take advantage of transducers:
   (benchmark
    (let [xform (comp
                 (map drop-empty-columns)
@@ -108,9 +113,11 @@
           (drop 3)
           (transduce xform conj []))))
 
-  ;; The transducer approach can be more memory efficient as it avoids creating intermediate collections between each step.
+  ;; The transducer approach can be more memory efficient as it avoids creating intermediate
+  ;; collections between each step.
   ;;
-  ;; These are some different approaches to consider depending on the characteristics of the transformation we're doing.
+  ;; These are some different approaches to consider depending on the characteristics of the
+  ;; transformation we're doing.
   )
 
 ;; Now we have one big tidy dataset. CSV isn't really the best storage option for datasets, but for the purposes of this workshop we'll use since it's universally known and supported. Better alternative file formats exist like parquet, avro, or nippy, which we would use if we were doing this "for real".

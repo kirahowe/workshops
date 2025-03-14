@@ -1,3 +1,4 @@
+^:kindly/hide-code
 (ns notebooks.4-explore-and-understand
   (:require
    [clojure.string :as str]
@@ -37,6 +38,8 @@
 (def raw-datasets
   (xlsx/workbook->datasets extract/raw-data-file-name))
 
+;; ## Exploring the Excel sheets
+
 ;; We can see what our sheets are named like this:
 (map tc/dataset-name raw-datasets)
 
@@ -58,7 +61,7 @@
      (str/join "\n")
      (spit "data/prepared/description-de.txt"))
 
-;; You'll notice this description is in German. As a quick bonus step, we can translate it to English using a free online translation API. To follow this particular example you'll need an API key from [DeepL](https://www.deepl.com/en/pro#developer).
+;; You'll notice this description is in German. As a quick bonus step, we can translate it to English using a free online translation API. To follow this particular example you'll need an API key from [DeepL](https://www.deepl.com/en/pro#developer). This code expects the key to be GPG encrypted in `secrets/translate-api-key.txt.gpg`.
 
 (comment
   (require '[clj-http.client :as http]
@@ -109,6 +112,8 @@
 ;;
 ;; Here's how we can see the locations of the stations on a map, starting from the cleaned up dataset we just saved:
 
+;; ## Some basic visualization
+
 (let [token (u/decrypt-gpg-key "secrets/mapbox-api-token.txt.gpg")]
   (-> location-info-file-name
       (tc/dataset {:key-fn keyword}) ;; Note this is how we convert the column names to keywords on load
@@ -128,6 +133,8 @@
                  :zoom 10.5                       ;; Adjust zoom level
                  :accesstoken token}))            ;; Use your Mapbox token
   )
+
+;; ## Cleaning up the timeseries data
 
 ;; Now we get into the interesting work. Inspecting one of the annual data files we can see that this dataset is stored in a very wide format with bad column names
 

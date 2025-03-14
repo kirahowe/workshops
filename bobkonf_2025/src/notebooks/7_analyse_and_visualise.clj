@@ -1,6 +1,8 @@
-(ns notebooks.7-analysis-and-visualisation
+^:kindly/hide-code
+(ns notebooks.7-analyse-and-visualise
   (:require
    [java-time.api :as jt]
+   [notebooks.6-quality-control :as qa]
    [scicloj.tableplot.v1.plotly :as plotly]
    [tablecloth.api :as tc]
    [tablecloth.column.api :as tcc]))
@@ -9,7 +11,7 @@
 
 ;; ## Time series/time-based analysis
 
-(def dataset (tc/dataset "data/prepared/cleaned-dataset.csv"
+(def dataset (tc/dataset qa/clean-dataset-file-name
                          {:key-fn keyword
                           :parser-fn {:datetime [:local-date-time "yyyy-MM-dd'T'HH:mm"]}}))
 
@@ -171,16 +173,12 @@
 
 ;; For this we'll make use of our other dataset that includes metadata about the stations.
 
-(def location-info-ds
-  (tc/dataset "data/prepared/location-info.csv" {:key-fn keyword
-                                                 :parser-fn {:installed [:local-date-time "yyyy-MM-dd'T'HH:mm"]}}))
-
 ;; How does bicycle traffic vary across different locations in Berlin?
 ;; Station comparison - traffic volume
 (-> with-temporal-components
     (tc/group-by [:station-id])
     (tc/aggregate {:avg-count (comp int tcc/mean :count)})
-    (tc/inner-join location-info-ds :station-id)
+    (tc/inner-join qa/location-info-ds :station-id)
     (tc/order-by [:avg-count :desc])
     (plotly/base {:=width 1000 :=title "Station traffic comparison"})
     (plotly/layer-bar {:=x :direction :=y :avg-count}))
@@ -189,6 +187,6 @@
 (-> with-temporal-components
     (tc/group-by [:year :station-id])
     (tc/aggregate {:yearly-avg (comp int tcc/mean :count)})
-    (tc/inner-join location-info-ds :station-id)
+    (tc/inner-join qa/location-info-ds :station-id)
     (plotly/base {:=width 1000 :=title "Station growth over time"})
     (plotly/layer-line {:=x :year :=y :yearly-avg :=color :direction}))
