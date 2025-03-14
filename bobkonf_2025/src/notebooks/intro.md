@@ -1,6 +1,6 @@
 ## Welcome to Clojure for data science
 
-This book is a published, more curated version of the workshop first presented live at Bobkonf 2025 in Berlin on March 14, 2025.
+This book is a published, more curated version of the workshop first presented live at Bobkonf 2025 in Berlin on March 14, 2025. At the time of this workshop the tools and libraries used here were the most recent recommended stack from the Scicloj community.
 
 ## Abstract
 
@@ -36,16 +36,16 @@ There is _way_ more than 90 minutes worth of material to cover, so in this works
 
 ### Overview
 
-1. **[Setup](/bobkonf-2025/notebooks.installation_guide.html) and [intro](/bobkonf-2025/notebooks.getting_started_with_clojure.html) (15 mins):**
-  Hopefully you have already [installed Clojure](/bobkonf-2025/notebooks.installation_guide.html) and one way or another have a working Clojure environment. We'll make sure everyone is set up to follow along and take a very quick tour of Clojure's as a language in the [getting started section](/bobkonf-2025/notebooks.getting_started_with_clojure.html) before diving in to the specific libraries we'll use for a more realistic data analysis.
+1. **[Setup](/berlin-bike-traffic/notebooks.1_installation_guide.html) and [intro](/berlin-bike-traffic/notebooks.2_getting_started_with_clojure.html) (15 mins):**
+  Hopefully you have already [installed Clojure](/berlin-bike-traffic/notebooks.1_installation_guide.html) and one way or another have a working Clojure environment. We'll make sure everyone is set up to follow along and take a very quick tour of Clojure's as a language in the [getting started section](/berlin-bike-traffic/notebooks.2_getting_started_with_clojure.html) before diving in to the specific libraries we'll use for a more realistic data analysis.
 
-2. **[Data loading and exploration](/bobkonf-2025/notebooks.explore_and_understand.html) (20 mins):**
+2. **[Data loading](/berlin-bike-traffic/notebooks.3_extract.html) and [exploration](/berlin-bike-traffic/notebooks.4_explore_and_understand.html) (20 mins):**
   We'll learn how to load data from the internet into a tablecloth dataset, how to parse excel files, and how to explore it so we can see what we're working with.
 
-3. **Data cleaning and transformation (20 mins):**
+3. **[Data cleaning](/berlin-bike-traffic/notebooks.6_quality_control.html) and [transformation](/berlin-bike-traffic/notebooks.5_transform.html) (20 mins):**
   Once we have a sense of what our data looks like, we'll learn how to clean it up, transforming into an "analysis-ready" dataset.
 
-4. **Analysis, visualization, and reporting (20 mins):**
+4. **[Analysis, visualization, and reporting (20 mins)](/berlin-bike-traffic/notebooks.7_analyse_and_visualise.html):**
   After we have a tidy dataset usable for analysis, we'll get to work answering some of our original questions.
 
 5. **Integration and distribution (15 mins):**

@@ -19,15 +19,19 @@
 ;; In any real-world dataset, there are always data quality issues that we should address before proceeding with an analysis. If we don't, we risk drawing incorrect conclusions because the source data may be unreliable or unrealistic. We need to expose any issues like this ahead of time so that we can correctly interpret our results.
 
 ;; In this case we have some very helpful advice in the dataset description pointing out several things we should look for, including:
+;;
 ;; 1. Gaps in the data from technical issues (battery failures, defective equipment, transmission issues, etc.)
 ;; 2. Different station start dates
 ;; 3. Environmental factors affecting measurement
 ;; 4. Infrastructure changes affecting traffic (detours, construction, network updates)
 ;; 5. Mis-measurement due to incorrect bike lane usage (cyclists travelling in the wrong direction)
 
-;; We'll build up a dashboard to quantify and visualize these data quality issues so that we can conduct an accurate analysis.
+;; We'll explore and fix these data quality issues so that we can conduct an accurate analysis.
+
+;; ## Missing and inconsistent data
 
 ;; First we'll calculate the uptime percentage for each station. To do this we'll
+;;
 ;; 1. Look at the location metadata dataset to determine when a station came online
 ;; 2. Determine how many measurements it _should_ have, if it had been working 24/7
 ;; 3. Examine how many measurements we actually have, and compare
@@ -107,6 +111,8 @@ grouped-by-station-id
 
 (set/difference (-> corrected-station-ids (tc/group-by :station-id) :name set)
                 (set (:station-id location-info-ds)))
+
+;; ## Station reliability
 
 ;; Now we'll figure out each station's reliability. This is where we can really see the power of tablecloth's magic handling of grouped datasets. We can just use all of the regular tablecloth functions and they will magically work on the grouped datasets.
 ;;
